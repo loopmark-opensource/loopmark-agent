@@ -4,15 +4,13 @@ Tools for the Content / Posting Agent.
 
 from __future__ import annotations
 
-import json
-import os
 from datetime import datetime, timedelta
 from typing import Optional
 
 from langchain_core.tools import tool
 
-from config import config
 from models.schemas import GeneratedPost, Platform
+from storage import get_storage
 
 
 # ─── helpers ───────────────────────────────────────────────────────────────
@@ -37,17 +35,11 @@ _BEST_TIMES = {
 
 
 def _load_posts() -> list[dict]:
-    os.makedirs(config.DATA_DIR, exist_ok=True)
-    if not os.path.exists(config.POSTS_FILE):
-        return []
-    with open(config.POSTS_FILE) as f:
-        return json.load(f)
+    return get_storage().load_posts()
 
 
 def _save_posts(data: list[dict]) -> None:
-    os.makedirs(config.DATA_DIR, exist_ok=True)
-    with open(config.POSTS_FILE, "w") as f:
-        json.dump(data, f, indent=2, default=str)
+    get_storage().save_posts(data)
 
 
 # ─── tools ─────────────────────────────────────────────────────────────────

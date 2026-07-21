@@ -8,33 +8,25 @@ the data/ directory.
 
 from __future__ import annotations
 
-import json
-import os
 from datetime import datetime
 from typing import Optional
 
 from langchain_core.tools import tool
 
-from config import config
 from models.schemas import (
     Complaint, ComplaintCategory, ComplaintSeverity,
 )
+from storage import get_storage
 
 
 # ─── helpers ───────────────────────────────────────────────────────────────
 
 def _load_complaints() -> list[dict]:
-    os.makedirs(config.DATA_DIR, exist_ok=True)
-    if not os.path.exists(config.COMPLAINTS_FILE):
-        return []
-    with open(config.COMPLAINTS_FILE) as f:
-        return json.load(f)
+    return get_storage().load_complaints()
 
 
 def _save_complaints(data: list[dict]) -> None:
-    os.makedirs(config.DATA_DIR, exist_ok=True)
-    with open(config.COMPLAINTS_FILE, "w") as f:
-        json.dump(data, f, indent=2, default=str)
+    get_storage().save_complaints(data)
 
 
 # ─── tools ─────────────────────────────────────────────────────────────────
