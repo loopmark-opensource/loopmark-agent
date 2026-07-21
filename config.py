@@ -20,6 +20,7 @@ class Config:
     COMPLAINTS_FILE: str = os.path.join(DATA_DIR, "complaints.json")
     LEADS_FILE: str = os.path.join(DATA_DIR, "leads.json")
     POSTS_FILE: str = os.path.join(DATA_DIR, "posts.json")
+    EMAILS_FILE: str = os.path.join(DATA_DIR, "emails.json")
 
 
 config = Config()

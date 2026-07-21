@@ -7,32 +7,21 @@ plain-text conversion, and an email campaign library.
 
 from __future__ import annotations
 
-import json
-import os
 from datetime import datetime, timedelta
 
 from langchain_core.tools import tool
 
-from config import config
+from storage import get_storage
 
 
 # ─── helpers ───────────────────────────────────────────────────────────────
 
-EMAIL_FILE = os.path.join(config.DATA_DIR, "emails.json")
-
-
 def _load_emails() -> list[dict]:
-    os.makedirs(config.DATA_DIR, exist_ok=True)
-    if not os.path.exists(EMAIL_FILE):
-        return []
-    with open(EMAIL_FILE) as f:
-        return json.load(f)
+    return get_storage().load_emails()
 
 
 def _save_emails(data: list[dict]) -> None:
-    os.makedirs(config.DATA_DIR, exist_ok=True)
-    with open(EMAIL_FILE, "w") as f:
-        json.dump(data, f, indent=2, default=str)
+    get_storage().save_emails(data)
 
 
 # ─── tools ─────────────────────────────────────────────────────────────────

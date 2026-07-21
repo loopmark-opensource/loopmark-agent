@@ -14,7 +14,6 @@ a clear error rather than crashing the agent.
 
 from __future__ import annotations
 
-import json
 import os
 from datetime import datetime
 from typing import Optional
@@ -22,7 +21,7 @@ from typing import Optional
 import httpx
 from langchain_core.tools import tool
 
-from config import config
+from storage import get_storage
 
 # ─── credential helpers ────────────────────────────────────────────────────
 
@@ -47,17 +46,11 @@ def _buffer_creds() -> dict | None:
 # ─── post-status tracking ──────────────────────────────────────────────────
 
 def _load_posts() -> list[dict]:
-    os.makedirs(config.DATA_DIR, exist_ok=True)
-    if not os.path.exists(config.POSTS_FILE):
-        return []
-    with open(config.POSTS_FILE) as f:
-        return json.load(f)
+    return get_storage().load_posts()
 
 
 def _save_posts(data: list[dict]) -> None:
-    os.makedirs(config.DATA_DIR, exist_ok=True)
-    with open(config.POSTS_FILE, "w") as f:
-        json.dump(data, f, indent=2, default=str)
+    get_storage().save_posts(data)
 
 
 def _mark_published(post_id: str, platform_post_id: str = "", error: str = "") -> None:

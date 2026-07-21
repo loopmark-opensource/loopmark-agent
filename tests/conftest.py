@@ -15,6 +15,11 @@ def isolated_data_dir(tmp_path, monkeypatch):
     monkeypatch.setattr("config.config.COMPLAINTS_FILE", str(data_dir / "complaints.json"))
     monkeypatch.setattr("config.config.LEADS_FILE", str(data_dir / "leads.json"))
     monkeypatch.setattr("config.config.POSTS_FILE", str(data_dir / "posts.json"))
-    monkeypatch.setattr("tools.email_tools.EMAIL_FILE", str(data_dir / "emails.json"))
+    monkeypatch.setattr("config.config.EMAILS_FILE", str(data_dir / "emails.json"))
+
+    from storage import set_storage
+    from storage.json_storage import JsonStorage
+
+    set_storage(JsonStorage())
 
     monkeypatch.setenv("OPENAI_API_KEY", "test-key-for-ci")
