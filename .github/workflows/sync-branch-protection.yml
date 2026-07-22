@@ -1,11 +1,6 @@
 name: Sync branch protection
 
 on:
-  push:
-    branches: [main, dev]
-    paths:
-      - ".github/rulesets/**"
-      - ".github/workflows/sync-branch-protection.yml"
   workflow_dispatch:
 
 permissions:
