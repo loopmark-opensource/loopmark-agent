@@ -2,15 +2,19 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
   pull_request:
     branches: [main, master]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   test:
+    name: test (${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -100,3 +104,25 @@ jobs:
 
       - name: Scan dependencies with pip-audit
         run: pip-audit -r requirements.txt --strict --desc on
+
+  required-checks:
+    name: Required checks
+    runs-on: ubuntu-latest
+    needs: [test, security, vulnerability]
+    if: always()
+
+    steps:
+      - name: Verify all required CI jobs passed
+        run: |
+          echo "test: ${{ needs.test.result }}"
+          echo "security: ${{ needs.security.result }}"
+          echo "vulnerability: ${{ needs.vulnerability.result }}"
+
+          if [[ "${{ needs.test.result }}" != "success" ||
+                "${{ needs.security.result }}" != "success" ||
+                "${{ needs.vulnerability.result }}" != "success" ]]; then
+            echo "One or more required CI checks failed."
+            exit 1
+          fi
+
+          echo "All required CI checks passed."

@@ -1,0 +1,39 @@
+name: Sync branch protection
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - ".github/rulesets/**"
+      - ".github/workflows/sync-branch-protection.yml"
+  workflow_dispatch:
+
+permissions:
+  administration: write
+  contents: read
+
+jobs:
+  sync-ruleset:
+    name: Apply main branch ruleset
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply repository ruleset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RULESET_ID=$(gh api repos/${{ github.repository }}/rulesets --jq '.[] | select(.name=="main") | .id')
+          if [[ -z "$RULESET_ID" ]]; then
+            gh api \
+              --method POST \
+              repos/${{ github.repository }}/rulesets \
+              --input .github/rulesets/main.json
+          else
+            gh api \
+              --method PUT \
+              repos/${{ github.repository }}/rulesets/${RULESET_ID} \
+              --input .github/rulesets/main.json
+          fi
