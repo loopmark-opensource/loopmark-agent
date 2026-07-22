@@ -95,16 +95,17 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
 
-      - name: Install runtime dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pip-audit
+          python -m pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Scan dependencies with pip-audit
-        run: pip-audit -r requirements.txt --strict --desc on
+        run: python -m pip_audit -r requirements.txt --strict --desc on
 
   required-checks:
     name: Required checks
