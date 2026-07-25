@@ -73,6 +73,8 @@ class PostRequest(BaseModel):
     platform: Platform
     tone: ContentTone = ContentTone.PROFESSIONAL
     target_audience: str = "general audience"
+    business_goals: str = ""
+    audience_engagement: str = ""
     keywords: list[str] = Field(default_factory=list)
     include_cta: bool = True
     max_length: Optional[int] = None
@@ -93,6 +95,43 @@ class ContentCalendarEntry(BaseModel):
     topic: str
     content: str
     status: str = "scheduled"
+
+
+# ──────────────────────────────────────────────
+# Audience research
+# ──────────────────────────────────────────────
+
+class BusinessProfile(BaseModel):
+    product_name: str = ""
+    tagline: str = ""
+    description: str = ""
+    target_audience: str = ""
+    brand_tone: str = ""
+    website_url: str = ""
+    default_cta: str = ""
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AudiencePersona(BaseModel):
+    id: str = Field(default_factory=lambda: f"PERSONA-{int(datetime.utcnow().timestamp())}")
+    name: str
+    demographics: str = ""
+    pain_points: str = ""
+    goals: str = ""
+    preferred_platforms: list[str] = Field(default_factory=list)
+    messaging_angles: list[str] = Field(default_factory=list)
+    source: str = ""  # e.g. website, crm, manual
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class CRMContact(BaseModel):
+    segment: str = "general"
+    name: str = ""
+    email: str = ""
+    company: str = ""
+    industry: str = ""
+    job_title: str = ""
+    tags: list[str] = Field(default_factory=list)
 
 
 # ──────────────────────────────────────────────

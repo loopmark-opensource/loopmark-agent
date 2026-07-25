@@ -16,6 +16,9 @@ def isolated_data_dir(tmp_path, monkeypatch):
     monkeypatch.setattr("config.config.LEADS_FILE", str(data_dir / "leads.json"))
     monkeypatch.setattr("config.config.POSTS_FILE", str(data_dir / "posts.json"))
     monkeypatch.setattr("config.config.EMAILS_FILE", str(data_dir / "emails.json"))
+    monkeypatch.setattr("config.config.BUSINESS_PROFILE_FILE", str(data_dir / "business_profile.json"))
+    monkeypatch.setattr("config.config.AUDIENCE_PERSONAS_FILE", str(data_dir / "audience_personas.json"))
+    monkeypatch.setattr("config.config.CRM_SEGMENTS_FILE", str(data_dir / "crm_segments.json"))
 
     from storage import set_storage
     from storage.json_storage import JsonStorage

@@ -46,3 +46,27 @@ class JsonStorage:
 
     def save_emails(self, data: list[dict]) -> None:
         self._write(config.EMAILS_FILE, data)
+
+    def load_business_profile(self) -> dict | None:
+        os.makedirs(config.DATA_DIR, exist_ok=True)
+        if not os.path.exists(config.BUSINESS_PROFILE_FILE):
+            return None
+        with open(config.BUSINESS_PROFILE_FILE) as f:
+            return json.load(f)
+
+    def save_business_profile(self, data: dict) -> None:
+        os.makedirs(config.DATA_DIR, exist_ok=True)
+        with open(config.BUSINESS_PROFILE_FILE, "w") as f:
+            json.dump(data, f, indent=2, default=str)
+
+    def load_audience_personas(self) -> list[dict]:
+        return self._read(config.AUDIENCE_PERSONAS_FILE)
+
+    def save_audience_personas(self, data: list[dict]) -> None:
+        self._write(config.AUDIENCE_PERSONAS_FILE, data)
+
+    def load_crm_segments(self) -> list[dict]:
+        return self._read(config.CRM_SEGMENTS_FILE)
+
+    def save_crm_segments(self, data: list[dict]) -> None:
+        self._write(config.CRM_SEGMENTS_FILE, data)

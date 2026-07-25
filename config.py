@@ -21,6 +21,9 @@ class Config:
     LEADS_FILE: str = os.path.join(DATA_DIR, "leads.json")
     POSTS_FILE: str = os.path.join(DATA_DIR, "posts.json")
     EMAILS_FILE: str = os.path.join(DATA_DIR, "emails.json")
+    BUSINESS_PROFILE_FILE: str = os.path.join(DATA_DIR, "business_profile.json")
+    AUDIENCE_PERSONAS_FILE: str = os.path.join(DATA_DIR, "audience_personas.json")
+    CRM_SEGMENTS_FILE: str = os.path.join(DATA_DIR, "crm_segments.json")
 
 
 config = Config()

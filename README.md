@@ -49,6 +49,15 @@ A LangGraph-powered AI marketing assistant with three specialised sub-agents. Yo
 - Funnel metrics and source reporting
 - Stage-specific nurture sequences
 
+### Audience research
+- Save a **business / brand profile** (product, audience, tone, website) once and reuse it
+- **Analyze a website URL** to extract positioning signals and draft audience personas
+- **Import CRM segments** from CSV or JSON exports (segment, industry, job title, tags)
+- Summarize imported CRM data into segment patterns for persona ideas
+- Save and list **audience personas** for posts, emails, and funnel planning
+
+> **Note:** This agent does not connect to Meta Ads, LinkedIn Campaign Manager, Google Ads, or social follower analytics APIs. Audience finding here = saved profile + website analysis + CRM import + AI personas.
+
 ---
 
 ## Architecture

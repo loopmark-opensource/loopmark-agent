@@ -110,7 +110,7 @@ def fallback_node(state: GraphState) -> GraphState:
         content=(
             "I'm your Marketing Agent. I can help you with:\n\n"
             "  🗣️  **Complaints** — log, triage, and respond to customer complaints\n"
-            "  📣  **Posting** — define your target audience, create platform-optimised content,\n"
+            "  📣  **Posting** — find your audience (website + CRM), define personas, create content,\n"
             "       engage your audience, and build content calendars\n"
             "  📊  **Funnel** — manage leads, score prospects, grow conversions, and plan nurture sequences\n\n"
             "How can I help you today?"
