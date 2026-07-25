@@ -21,6 +21,7 @@ from tools.social_tools import POSTING_TOOLS
 from tools.email_tools import EMAIL_TOOLS
 from tools.publisher_tools import PUBLISHER_TOOLS
 from tools.funnel_tools import FUNNEL_TOOLS
+from tools.audience_tools import AUDIENCE_TOOLS
 
 
 def _make_llm(temperature: float | None = None) -> ChatOpenAI:
@@ -56,7 +57,7 @@ def build_posting_agent():
     prompt = get_posting_prompt()
     return create_react_agent(
         model=llm,
-        tools=POSTING_TOOLS + EMAIL_TOOLS + PUBLISHER_TOOLS,
+        tools=POSTING_TOOLS + EMAIL_TOOLS + PUBLISHER_TOOLS + AUDIENCE_TOOLS,
         prompt=prompt,
     )
 
