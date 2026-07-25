@@ -357,6 +357,290 @@ These files are created automatically on first use. They are gitignored by defau
 
 ---
 
+## Web UI specification
+
+> **Full handoff doc for the team:** see **[app.md](app.md)** — Node.js backend + Next.js frontend + Python agent-service architecture, API contract, flows, and build order.
+
+There is **no web UI today** — the app is CLI-only (`python3 main.py`). This section is a handoff spec for backend and frontend teams building a web interface on top of the existing Python agent.
+
+### Target architecture
+
+```
+Frontend (React / Next.js)
+    │
+    ▼  REST or WebSocket
+Backend API (FastAPI — to be built)
+    │
+    ├── LangGraph agent (agents/graph.py)
+    ├── Tools (tools/*.py)
+    └── JSON storage (data/*.json)
+            │
+            ▼
+    OpenAI · Twitter · LinkedIn · Buffer
+```
+
+**Backend team:** wrap the existing agent and tools in a FastAPI (or similar) HTTP layer.  
+**Frontend team:** build pages that call those APIs. Reuse Pydantic models in `models/schemas.py` for request/response shapes.
+
+### Frontend pages (navigation)
+
+| Page | Purpose |
+|---|---|
+| **Dashboard** | Overview stats + quick actions |
+| **Chat** | Main AI interface (replaces CLI) |
+| **Posts** | Generate, edit, save, publish, schedule social content |
+| **Calendar** | Week/month view of scheduled posts |
+| **Email** | Draft campaigns, A/B subjects, drip sequences |
+| **Complaints** | Log, triage, draft responses, resolve |
+| **Funnel** | Lead list + pipeline board (8 stages) |
+| **Settings** | Product profile, integrations, AI model |
+
+Suggested nav structure:
+
+```
+Dashboard · Chat · Content (Posts, Calendar) · Email · Complaints · Funnel · Settings
+```
+
+### MVP screens (what each must include)
+
+#### 1. Chat (required)
+
+Replaces `python3 main.py`.
+
+| UI element | Purpose |
+|---|---|
+| Message thread | User + agent messages |
+| Text input + Send | Submit prompts |
+| Agent badge | Show routed agent: Complaints / Posting / Funnel |
+| Loading / error states | While agent runs or on failure |
+| New conversation | Clear session history |
+
+#### 2. Product / brand profile (strongly recommended)
+
+Without this, users must describe their product in every prompt. Store once and inject into agent prompts.
+
+| Field | Example |
+|---|---|
+| Product name | Loopmark |
+| Tagline | AI marketing for small teams |
+| Description | 2–3 sentences about the product |
+| Target audience | Small business owners |
+| Brand tone | Professional, friendly |
+| Website URL | `https://...` |
+| Default CTA | Start free trial |
+
+#### 3. Content / social posts (required)
+
+| Screen | Features |
+|---|---|
+| Post generator | Form: platform, topic, tone, audience → AI draft |
+| Post editor | Edit text, hashtags, character count (280 for Twitter) |
+| Actions | Save draft · Post now · Schedule |
+| Post library | Filter by platform/status; preview content |
+| Content calendar | Scheduled posts by date |
+
+Post lifecycle: `draft` → `scheduled` → `published` / `failed`
+
+Supported platforms: Twitter, LinkedIn, Instagram, Facebook, Blog
+
+#### 4. Email marketing (required)
+
+| Screen | Features |
+|---|---|
+| Email composer | Campaign name, subject, goal, audience, CTA |
+| AI generate | Preheader, body, CTA block |
+| A/B subjects | 2–3 subject line variants |
+| Drip sequences | Multi-email nurture plan |
+| Campaign library | Saved emails with status |
+| Copy actions | Copy HTML / plain text |
+
+> **Note:** The agent drafts emails only — it does not send via SMTP. The UI should label this clearly unless SendGrid/Mailchimp is added later.
+
+#### 5. Complaints (required)
+
+| Screen | Features |
+|---|---|
+| Complaint list | Filter by open/resolved, severity, category |
+| Log complaint | Name, email, message, category, severity |
+| Complaint detail | View message + AI-drafted response |
+| Resolve | Mark resolved with response text |
+| Stats | Counts by category and severity |
+
+Categories: `product`, `shipping`, `billing`, `customer_service`, `other`  
+Severity: `low`, `medium`, `high`, `critical`
+
+#### 6. Funnel / leads (required)
+
+| Screen | Features |
+|---|---|
+| Lead list | Name, email, company, stage, score |
+| Add / edit lead | Source, stage, notes |
+| Pipeline board | Kanban across 8 stages |
+| Metrics | Totals, by stage, top sources |
+| Nurture sequences | Recommended actions per stage |
+
+Funnel stages: `awareness` → `interest` → `consideration` → `intent` → `evaluation` → `purchase` → `retention` → `advocacy`
+
+Lead score bands: 0–30 cold · 31–60 warm · 61–80 hot · 81–100 sales-ready
+
+#### 7. Settings (required)
+
+| Section | Contents |
+|---|---|
+| AI | Model (`gpt-4o`, `gpt-4o-mini`), temperature |
+| Product profile | Brand fields (see above) |
+| Integrations | Twitter, LinkedIn, Buffer credentials |
+| Connection status | Green/red badge per platform |
+| Scheduler | Auto-post interval; manual run-once trigger |
+
+Never expose full API keys to the frontend — store credentials server-side only.
+
+### Backend API (to be built)
+
+The following endpoints do not exist yet. Map them to existing tools in `tools/` and the agent in `agents/graph.py`.
+
+#### Chat
+
+```
+POST /api/chat                         Send message, get reply + intent
+GET  /api/chat/sessions                List conversations (optional v1)
+GET  /api/chat/sessions/:id            Get conversation history (optional v1)
+```
+
+Example request/response:
+
+```json
+// POST /api/chat
+{ "message": "Write a LinkedIn post about our launch", "session_id": "optional-uuid" }
+
+// Response
+{ "reply": "Here's your LinkedIn post...", "intent": "posting", "agent": "Posting Agent" }
+```
+
+#### Posts & publishing
+
+```
+GET    /api/posts?platform=&status=
+POST   /api/posts
+POST   /api/posts/generate
+POST   /api/posts/:id/publish          Twitter / LinkedIn (post now)
+POST   /api/posts/:id/schedule         Buffer
+DELETE /api/posts/:id
+GET    /api/posts/calendar?from=&to=
+GET    /api/platforms/guidelines/:platform
+GET    /api/hashtags?topic=&platform=
+GET    /api/publishing/status
+GET    /api/buffer/profiles
+```
+
+#### Email
+
+```
+GET    /api/emails?status=
+POST   /api/emails/generate
+POST   /api/emails
+POST   /api/emails/ab-subjects
+POST   /api/emails/drip-sequence
+GET    /api/emails/:id
+PUT    /api/emails/:id
+DELETE /api/emails/:id
+POST   /api/emails/:id/plain-text
+```
+
+#### Complaints
+
+```
+GET    /api/complaints?status=&severity=
+POST   /api/complaints
+GET    /api/complaints/:id
+POST   /api/complaints/:id/draft-response
+POST   /api/complaints/:id/resolve
+GET    /api/complaints/stats
+```
+
+#### Funnel
+
+```
+GET    /api/leads?stage=&min_score=
+POST   /api/leads
+GET    /api/leads/:id
+PATCH  /api/leads/:id/stage
+PATCH  /api/leads/:id/score
+GET    /api/funnel/metrics
+GET    /api/funnel/nurture/:stage
+```
+
+#### Settings & dashboard
+
+```
+GET  /api/dashboard/stats
+GET  /api/settings
+PUT  /api/settings
+GET  /api/settings/product
+PUT  /api/settings/product
+GET  /api/integrations/status
+POST /api/integrations/test/:platform
+POST /api/scheduler/run-once
+GET  /api/scheduler/status
+```
+
+### What exists vs what needs building
+
+| Exists today | Needs building |
+|---|---|
+| LangGraph agent (`agents/graph.py`) | REST / WebSocket API |
+| JSON persistence (`data/*.json`) | CRUD endpoints |
+| CLI (`main.py`) | `POST /api/chat` wrapper |
+| Scheduler (`scheduler.py`) | Background job + API trigger |
+| Publisher tools (Twitter, LinkedIn, Buffer) | Service layer calling same tools |
+| Pydantic schemas (`models/schemas.py`) | API request/response models |
+
+### Integrations the UI must surface
+
+| Platform | UI action | Env vars |
+|---|---|---|
+| OpenAI | Generate all content | `OPENAI_API_KEY` |
+| Twitter/X | Post now | `TWITTER_API_*` (4 keys) |
+| LinkedIn | Post now | `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID` |
+| Buffer | Schedule multi-platform | `BUFFER_ACCESS_TOKEN` |
+| Email | Draft only (MVP) | — |
+
+Disable **Post now** / **Schedule** buttons when the relevant integration is not connected. Show connection status in Settings.
+
+### MVP vs v2
+
+**MVP (ship first)**
+
+1. Chat UI
+2. Product profile in settings
+3. Post generator + library + publish/schedule
+4. Email draft + library
+5. Complaints list + log + resolve
+6. Leads list + add + stage/score
+7. Integration settings + connection status
+
+**v2**
+
+- User auth / multi-tenant
+- Real email sending (SendGrid / Mailchimp)
+- Streaming chat responses (WebSocket / SSE)
+- Image generation for social posts
+- Platform analytics
+- Mobile PWA
+
+### Suggested frontend stack
+
+| Area | Suggestion |
+|---|---|
+| Framework | Next.js or React + Vite |
+| Chat | Message list + Markdown rendering |
+| Forms | React Hook Form + Zod |
+| Calendar | FullCalendar or similar |
+| Funnel board | Drag-and-drop Kanban (e.g. dnd-kit) |
+| Data fetching | TanStack Query |
+
+---
+
 ## Troubleshooting
 
 **"Set OPENAI_API_KEY in your .env file"**
