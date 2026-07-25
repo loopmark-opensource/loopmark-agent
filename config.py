@@ -15,8 +15,8 @@ class Config:
     LANGCHAIN_TRACING_V2: bool = os.getenv("LANGCHAIN_TRACING_V2", "false").lower() == "true"
     LANGCHAIN_PROJECT: str = os.getenv("LANGCHAIN_PROJECT", "marketing-agent")
 
-    # Data persistence
-    DATA_DIR: str = os.path.join(os.path.dirname(__file__), "data")
+    # Data persistence (override via DATA_DIR env for Loopmark monorepo)
+    DATA_DIR: str = os.getenv("DATA_DIR", os.path.join(os.path.dirname(__file__), "data"))
     COMPLAINTS_FILE: str = os.path.join(DATA_DIR, "complaints.json")
     LEADS_FILE: str = os.path.join(DATA_DIR, "leads.json")
     POSTS_FILE: str = os.path.join(DATA_DIR, "posts.json")
