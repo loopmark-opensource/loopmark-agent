@@ -7,6 +7,9 @@ from models.schemas import (
     Platform,
     PostRequest,
     ContentTone,
+    BusinessProfile,
+    AudiencePersona,
+    CRMContact,
 )
 
 
@@ -45,3 +48,20 @@ def test_post_request():
     )
     assert request.platform == Platform.LINKEDIN
     assert request.include_cta is True
+
+
+def test_business_profile_defaults():
+    profile = BusinessProfile(product_name="Acme")
+    assert profile.product_name == "Acme"
+    assert profile.website_url == ""
+
+
+def test_audience_persona_defaults():
+    persona = AudiencePersona(name="Founder")
+    assert persona.name == "Founder"
+    assert persona.id.startswith("PERSONA-")
+
+
+def test_crm_contact_segment_default():
+    contact = CRMContact(name="Jane", email="jane@example.com")
+    assert contact.segment == "general"
