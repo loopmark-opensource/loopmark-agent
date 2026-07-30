@@ -1,11 +1,20 @@
-# Marketing Agent
+# Loopmark Agent — Open-Source AI Marketing Assistant
+
+> **LangGraph marketing agent** for social media content, email campaigns, audience research, lead funnel management, and auto-posting to Twitter, LinkedIn, and Buffer. Free MIT-licensed Python CLI — bring your own OpenAI key.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-agent-blue)](https://github.com/langchain-ai/langgraph)
+
+**Also known as:** marketing agent · AI content generator · social media automation · email marketing AI · lead funnel assistant · audience research tool
+
+**Repository:** [github.com/loopmark-opensource/loopmark-agent](https://github.com/loopmark-opensource/loopmark-agent)
 
 Open-source LangGraph marketing assistant — free to use, modify, and distribute under the [MIT License](LICENSE).
 
 A LangGraph-powered AI marketing assistant with three specialised sub-agents. You talk to it in plain English — a router automatically sends your request to the right agent.
+
+**Search keywords:** `langgraph marketing agent`, `open source social media AI`, `AI email campaign generator`, `marketing automation python`, `audience persona generator`, `lead funnel AI`, `twitter linkedin auto poster`
 
 | Agent | What it does |
 |---|---|
@@ -683,6 +692,48 @@ Disable **Post now** / **Schedule** buttons when the relevant integration is not
 
 ---
 
+## Open source vs hosted (Loopmark)
+
+Part of the [open-core architecture](#open-source) — see issue [#1](https://github.com/loopmark-opensource/loopmark-agent/issues/1).
+
+### Open source today (this repo)
+
+Free under MIT. Run locally or self-host with your own keys:
+
+| Included | Details |
+|---|---|
+| LangGraph agents | Complaints, Posting, Funnel sub-agents |
+| CLI | `python3 main.py` interactive chat |
+| Tools | Content, email drafts, funnel, audience research, publishing |
+| Storage | Local JSON via `storage/` (complaints, leads, posts, personas) |
+| Credentials | BYOK — your `.env` keys via `credentials/` |
+| Scheduler | `python scheduler.py` — local cron/daemon auto-posting |
+| Audience research | Website URL analysis, CRM import, saved personas (no ad-platform APIs) |
+
+**Not paywalled:** core agents, content generation, local JSON persistence, and publishing with **your** API keys.
+
+### Planned hosted / paid layer (not shipped)
+
+Roadmap items tracked as GitHub issues — **not available in this OSS repo**:
+
+| Planned | Issue |
+|---|---|
+| Hosted web UI + chat API | [#7](https://github.com/loopmark-opensource/loopmark-agent/issues/7) |
+| Credential vault + OAuth social connect | [#6](https://github.com/loopmark-opensource/loopmark-agent/issues/6) |
+| Managed scheduler worker (retries, alerts) | [#11](https://github.com/loopmark-opensource/loopmark-agent/issues/11) |
+| Orgs, RBAC, post approval workflows | [#10](https://github.com/loopmark-opensource/loopmark-agent/issues/10) |
+| Stripe billing + usage metering | [#8](https://github.com/loopmark-opensource/loopmark-agent/issues/8) |
+
+### Contributing
+
+| Want to… | Do this |
+|---|---|
+| Fix bugs, add OSS tools, improve agents | Open a PR on this repo |
+| Request hosted features (UI, vault, billing) | Open or comment on the roadmap issues above |
+| Run locally | Follow [Installation](#installation) — no account required |
+
+---
+
 ## Open source
 
 This project is open source and released under the **MIT License**. You are free to:
@@ -704,6 +755,8 @@ Contributions are welcome. To contribute:
 4. Open a pull request with a clear description
 
 Please keep changes focused and match the existing code style.
+
+See [docs/DISCOVERABILITY.md](docs/DISCOVERABILITY.md) for SEO, GitHub topics, and how to help the project get found online.
 
 ### Security
 

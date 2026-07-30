@@ -1,0 +1,36 @@
+[project]
+name = "loopmark-agent"
+version = "1.0.0"
+description = "Open-source LangGraph AI marketing agent — social content, email campaigns, audience research, lead funnel, and auto-posting."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+keywords = [
+    "marketing",
+    "langgraph",
+    "langchain",
+    "ai-agent",
+    "social-media",
+    "email-marketing",
+    "lead-generation",
+    "content-marketing",
+    "audience-research",
+    "open-source",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Communications",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Homepage = "https://github.com/loopmark-opensource/loopmark-agent"
+Repository = "https://github.com/loopmark-opensource/loopmark-agent"
+Issues = "https://github.com/loopmark-opensource/loopmark-agent/issues"
+Documentation = "https://github.com/loopmark-opensource/loopmark-agent#readme"
