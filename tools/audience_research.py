@@ -5,12 +5,8 @@ from __future__ import annotations
 import re
 from html.parser import HTMLParser
 from typing import Any
-from urllib.parse import urlparse
-
-import httpx
-
-_ALLOWED_SCHEMES = frozenset({"http", "https"})
-_FETCH_HEADERS = {"User-Agent": "LoopmarkAudienceBot/1.0 (+https://loopmark.io)"}
+from urllib.error import URLError
+from urllib.request import Request, urlopen
 
 
 class _PageMetaParser(HTMLParser):
@@ -56,45 +52,22 @@ def _strip_html(html: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def _normalize_url(url: str) -> str:
-    url = url.strip()
-    parsed = urlparse(url)
-    if not parsed.scheme:
-        return f"https://{url}"
-    return url
-
-
-def _empty_site_result(url: str, error: str = "") -> dict[str, str]:
-    return {
-        "url": url,
-        "error": error,
-        "title": "",
-        "description": "",
-        "headings": "",
-        "snippet": "",
-    }
-
-
 def fetch_site_summary(url: str, timeout: int = 8) -> dict[str, str]:
-    fetch_url = _normalize_url(url)
-    parsed = urlparse(fetch_url)
-    if parsed.scheme not in _ALLOWED_SCHEMES:
-        return _empty_site_result(fetch_url, f"Unsupported URL scheme: {parsed.scheme}")
-
+    req = Request(
+        url,
+        headers={"User-Agent": "LoopmarkAudienceBot/1.0 (+https://loopmark.io)"},
+    )
     try:
-        with httpx.Client(
-            timeout=timeout,
-            follow_redirects=True,
-            headers=_FETCH_HEADERS,
-        ) as client:
-            response = client.get(fetch_url)
-            response.raise_for_status()
-            raw = response.text[:120_000]
-    except httpx.HTTPError as exc:
-        return _empty_site_result(fetch_url, str(exc))
+        with urlopen(req, timeout=timeout) as resp:
+            raw = resp.read(120_000).decode("utf-8", errors="ignore")
+    except (URLError, TimeoutError, ValueError) as exc:
+        return {"url": url, "error": str(exc), "title": "", "description": "", "snippet": ""}
 
     parser = _PageMetaParser()
-    parser.feed(raw)
+    try:
+        parser.feed(raw)
+    except Exception:
+        pass
 
     title = parser.title.strip()
     description = parser.description.strip()
@@ -103,7 +76,7 @@ def fetch_site_summary(url: str, timeout: int = 8) -> dict[str, str]:
         description = snippet[:220]
 
     return {
-        "url": fetch_url,
+        "url": url,
         "title": title,
         "description": description,
         "headings": " · ".join(parser.h1),

@@ -14,12 +14,12 @@ a clear error rather than crashing the agent.
 
 from __future__ import annotations
 
+import os
 from datetime import datetime
 
 import httpx
 from langchain_core.tools import tool
 
-from credentials import get_credentials
 from storage import get_storage
 
 

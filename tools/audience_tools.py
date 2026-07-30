@@ -18,7 +18,6 @@ from langchain_core.tools import tool
 
 from models.schemas import AudiencePersona, BusinessProfile, CRMContact
 from storage import get_storage
-from tools.audience_research import personas_from_segment, personas_from_website
 
 _MAX_WEBSITE_CHARS = 8000
 _MAX_BODY_SNIPPET = 4000
@@ -77,58 +76,6 @@ def _normalize_url(url: str) -> str:
     if not parsed.scheme:
         return f"https://{url.strip()}"
     return url.strip()
-
-
-def _format_list_field(value: str | list[str]) -> str:
-    if isinstance(value, list):
-        return "; ".join(str(v) for v in value if v)
-    return str(value)
-
-
-def _format_persona_research(research: dict) -> str:
-    lines = [
-        "",
-        "Suggested target audience:",
-        f"  {research.get('suggested_target_audience', '(not inferred)')}",
-        "",
-        "Suggested business goals:",
-        f"  {research.get('suggested_business_goals', '(not inferred)')}",
-        "",
-        "Suggested engagement approach:",
-        f"  {research.get('suggested_audience_engagement', '(not inferred)')}",
-        "",
-        "Draft personas (offer save_audience_persona to persist):",
-    ]
-    for persona in research.get("personas", []):
-        lines.append(f"\n  • {persona.get('name', 'Persona')}")
-        if persona.get("description"):
-            lines.append(f"    Description: {persona['description']}")
-        if persona.get("demographics"):
-            lines.append(f"    Demographics: {persona['demographics']}")
-        pain_points = persona.get("pain_points")
-        if pain_points:
-            lines.append(f"    Pain points: {_format_list_field(pain_points)}")
-        goals = persona.get("goals")
-        if goals:
-            lines.append(f"    Goals: {_format_list_field(goals)}")
-        platforms = persona.get("platforms")
-        if platforms:
-            lines.append(f"    Platforms: {_format_list_field(platforms)}")
-    return "\n".join(lines)
-
-
-def _personas_for_crm_contacts(contacts: list[CRMContact]) -> str:
-    profile = get_storage().load_business_profile() or {}
-    product_name = profile.get("product_name") or None
-    by_segment: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for contact in contacts:
-        by_segment[contact.segment or "general"].append(contact.model_dump())
-
-    lines = ["", "CRM-derived draft personas:"]
-    for segment, members in sorted(by_segment.items(), key=lambda x: (-len(x[1]), x[0])):
-        research = personas_from_segment(segment, members, product_name)
-        lines.append(_format_persona_research(research))
-    return "\n".join(lines)
 
 
 def _map_crm_row(row: dict[str, str]) -> CRMContact:
@@ -340,6 +287,11 @@ def analyze_website_for_audience(url: str) -> str:
             "",
             "Page text snippet:",
             body or "(no readable text extracted)",
+            "",
+            "Next steps for the agent:",
+            "  1. Infer 2–4 likely audience personas from the signals above.",
+            "  2. Note demographics, pain points, goals, and best platforms per persona.",
+            "  3. Offer to save personas with save_audience_persona and update the business profile.",
         ]
     )
 
@@ -351,21 +303,6 @@ def analyze_website_for_audience(url: str) -> str:
         if description and not existing.get("description"):
             existing["description"] = description
         get_storage().save_business_profile(existing)
-
-    site = {
-        "url": fetch_url,
-        "title": title,
-        "description": description,
-        "headings": " | ".join(h1s),
-        "snippet": body,
-    }
-    research = personas_from_website(
-        site,
-        product_name=existing.get("product_name"),
-        existing_audience=existing.get("target_audience"),
-    )
-    lines.append(research.get("site_summary", ""))
-    lines.append(_format_persona_research(research))
 
     return "\n".join(lines)
 
@@ -403,8 +340,7 @@ def import_crm_segments(data: str, format: str = "csv", merge: bool = True) -> s
     storage.save_crm_segments(existing)
 
     summary = _summarize_crm_segments(contacts)
-    persona_block = _personas_for_crm_contacts(contacts)
-    return f"{summary}{persona_block}\n\nStored {len(existing)} total CRM contacts in the agent library."
+    return f"{summary}\n\nStored {len(existing)} total CRM contacts in the agent library."
 
 
 @tool
@@ -417,8 +353,7 @@ def summarize_crm_segments() -> str:
             "(columns: segment, name, email, company, industry, job_title, tags)."
         )
     contacts = [CRMContact(**item) for item in contacts_raw]
-    summary = _summarize_crm_segments(contacts)
-    return f"{summary}{_personas_for_crm_contacts(contacts)}"
+    return _summarize_crm_segments(contacts)
 
 
 @tool
