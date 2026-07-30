@@ -1,13 +1,20 @@
-# Marketing Agent
+# Loopmark Agent — Open-Source AI Marketing Assistant
+
+> **LangGraph marketing agent** for social media content, email campaigns, audience research, lead funnel management, and auto-posting to Twitter, LinkedIn, and Buffer. Free MIT-licensed Python CLI — bring your own OpenAI key.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-agent-blue)](https://github.com/langchain-ai/langgraph)
 
-Open-source LangGraph marketing assistant — free to use, modify, and distribute under the [MIT License](LICENSE).
+**Also known as:** marketing agent · AI content generator · social media automation · email marketing AI · lead funnel assistant · audience research tool
 
 **Repository:** [github.com/loopmark-opensource/loopmark-agent](https://github.com/loopmark-opensource/loopmark-agent)
 
+Open-source LangGraph marketing assistant — free to use, modify, and distribute under the [MIT License](LICENSE).
+
 A LangGraph-powered AI marketing assistant with three specialised sub-agents. You talk to it in plain English — a router automatically sends your request to the right agent.
+
+**Search keywords:** `langgraph marketing agent`, `open source social media AI`, `AI email campaign generator`, `marketing automation python`, `audience persona generator`, `lead funnel AI`, `twitter linkedin auto poster`
 
 | Agent | What it does |
 |---|---|
@@ -748,6 +755,8 @@ Contributions are welcome. To contribute:
 4. Open a pull request with a clear description
 
 Please keep changes focused and match the existing code style.
+
+See [docs/DISCOVERABILITY.md](docs/DISCOVERABILITY.md) for SEO, GitHub topics, and how to help the project get found online.
 
 ### Security
 
