@@ -7,7 +7,7 @@ Supported channels:
   - Buffer         via Buffer API v1  (schedules to Twitter, LinkedIn,
                    Instagram, Facebook from one place)
 
-All credentials are read from environment variables (set in .env).
+All credentials are read via `credentials.get_credentials()` (default: `.env` BYOK).
 Each tool degrades gracefully: if credentials are missing it returns
 a clear error rather than crashing the agent.
 """
@@ -16,31 +16,23 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from typing import Optional
 
 import httpx
 from langchain_core.tools import tool
 
 from storage import get_storage
 
-# ─── credential helpers ────────────────────────────────────────────────────
 
 def _twitter_creds() -> dict | None:
-    keys = ["TWITTER_API_KEY", "TWITTER_API_SECRET",
-            "TWITTER_ACCESS_TOKEN", "TWITTER_ACCESS_SECRET"]
-    vals = {k: os.getenv(k, "") for k in keys}
-    return vals if all(vals.values()) else None
+    return get_credentials().twitter()
 
 
 def _linkedin_creds() -> dict | None:
-    token = os.getenv("LINKEDIN_ACCESS_TOKEN", "")
-    person_id = os.getenv("LINKEDIN_PERSON_ID", "")
-    return {"token": token, "person_id": person_id} if token and person_id else None
+    return get_credentials().linkedin()
 
 
 def _buffer_creds() -> dict | None:
-    token = os.getenv("BUFFER_ACCESS_TOKEN", "")
-    return {"token": token} if token else None
+    return get_credentials().buffer()
 
 
 # ─── post-status tracking ──────────────────────────────────────────────────
