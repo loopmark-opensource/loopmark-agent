@@ -21,6 +21,7 @@ import sys
 import os
 import time
 import signal
+from datetime import datetime
 
 import typer
 from rich.console import Console
@@ -28,18 +29,22 @@ from rich.panel import Panel
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from config import config
-
-if not config.OPENAI_API_KEY or config.OPENAI_API_KEY.startswith("sk-..."):
-    print("ERROR: Set OPENAI_API_KEY in your .env file.")
-    sys.exit(1)
-
+from credentials import get_credentials
+from storage import get_storage
 from tools.publisher_tools import publish_scheduled_posts
 
 console = Console()
 app = typer.Typer(add_completion=False, help="Marketing Agent — Auto-posting Scheduler")
 
 _running = True
+
+
+def _require_openai_key() -> None:
+    from config import config
+
+    if not config.OPENAI_API_KEY or config.OPENAI_API_KEY.startswith("sk-..."):
+        console.print("[red]ERROR:[/red] Set OPENAI_API_KEY in your .env file.")
+        raise typer.Exit(code=1)
 
 
 def _handle_signal(sig, frame):
@@ -52,9 +57,32 @@ signal.signal(signal.SIGINT, _handle_signal)
 signal.signal(signal.SIGTERM, _handle_signal)
 
 
+def _integration_status() -> str:
+    creds = get_credentials()
+    parts = [
+        f"Twitter: {'ready' if creds.twitter() else 'missing'}",
+        f"LinkedIn: {'ready' if creds.linkedin() else 'missing'}",
+        f"Buffer: {'ready' if creds.buffer() else 'missing'}",
+    ]
+    return " · ".join(parts)
+
+
+def _queue_summary() -> str:
+    posts = get_storage().load_posts()
+    today = datetime.utcnow().date()
+    scheduled = [p for p in posts if p.get("status") == "scheduled"]
+    due = [
+        p for p in scheduled
+        if p.get("scheduled_date")
+        and datetime.fromisoformat(p["scheduled_date"]).date() <= today
+    ]
+    return f"Queue: {len(scheduled)} scheduled · {len(due)} due now"
+
+
 def _run_once(dry_run: bool = False) -> None:
-    now = __import__("datetime").datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     console.print(f"\n[dim]Checking queue at {now}...[/dim]")
+    console.print(f"[dim]{_queue_summary()} · {_integration_status()}[/dim]")
     try:
         result = publish_scheduled_posts.invoke({"dry_run": dry_run})
         console.print(
@@ -75,6 +103,7 @@ def run(
     dry_run: bool = typer.Option(False, "--dry-run", help="Report due posts without publishing."),
 ):
     """Start the auto-posting scheduler."""
+    _require_openai_key()
     if once:
         _run_once(dry_run=dry_run)
         return
