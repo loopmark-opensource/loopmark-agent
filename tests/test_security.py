@@ -67,8 +67,8 @@ def test_config_does_not_log_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "super-secret-test-key" not in config_repr
 
 
-def test_data_dir_default_is_project_relative() -> None:
-    """Config should persist data under the project tree, not system paths."""
+def test_data_dir_default_is_cwd_relative() -> None:
+    """Config should persist data under cwd/data so pip installs are writable."""
     config_text = (REPO_ROOT / "config.py").read_text()
-    assert "os.path.dirname(__file__)" in config_text
-    assert "data" in config_text
+    assert 'os.path.join(os.getcwd(), "data")' in config_text
+    assert "DATA_DIR" in config_text

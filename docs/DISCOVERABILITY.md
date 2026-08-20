@@ -43,6 +43,17 @@ gh repo edit loopmark-opensource/loopmark-agent \
   --add-topic lead-generation --add-topic audience-research
 ```
 
+## PyPI package
+
+The project is packaged as **`loopmark-agent`**:
+
+```bash
+pip install loopmark-agent
+loopmark-agent chat
+```
+
+Console script and dependencies are declared in `pyproject.toml`. Publishing uses GitHub Actions (`.github/workflows/publish-pypi.yml`) with [Trusted Publishing](https://docs.pypi.org/trusted-publishers/) on GitHub Release — configure the `pypi` environment and PyPI trusted publisher for this repo once.
+
 ## README & metadata (done in repo)
 
 - Keyword-rich title and subtitle in `README.md`
@@ -67,7 +78,7 @@ Target these phrases in docs, issues, and release notes:
 | Channel | Action |
 |---|---|
 | **Awesome lists** | PR to awesome-langchain, awesome-ai-agents |
-| **PyPI** | Publish package for `pip install` discoverability |
+| **PyPI** | Package is buildable via `pyproject.toml`; publish with the `Publish to PyPI` workflow on release ([#26](https://github.com/loopmark-opensource/loopmark-agent/issues/26)) |
 | **GitHub Pages** | Docs site with meta description + sitemap |
 | **Product Hunt / Hacker News** | Launch when web UI ships |
 | **Dev.to / Medium** | Tutorial: "Build a marketing agent with LangGraph" |
