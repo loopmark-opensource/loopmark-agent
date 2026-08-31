@@ -39,9 +39,34 @@ jobs:
         with:
           path: site
 
+  check-pages:
+    name: Check Pages enabled
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Detect GitHub Pages configuration
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          STATUS=$(gh api "repos/${{ github.repository }}/pages" --jq .status 2>/dev/null)
+          CODE=$?
+          set -e
+          if [[ $CODE -eq 0 && -n "$STATUS" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "GitHub Pages is configured (status: $STATUS)."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::GitHub Pages is not enabled. Enable it once: Settings → Pages → Build and deployment → Source: GitHub Actions"
+            echo "https://github.com/${{ github.repository }}/settings/pages"
+          fi
+
   deploy:
     name: Deploy to GitHub Pages
-    needs: build
+    needs: [build, check-pages]
+    if: needs.check-pages.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
