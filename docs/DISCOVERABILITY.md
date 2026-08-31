@@ -98,6 +98,14 @@ Rebuild locally:
 python scripts/build_docs_site.py
 ```
 
+### Enable GitHub Pages (one-time, repo admin)
+
+1. Open [Settings → Pages](https://github.com/loopmark-opensource/loopmark-agent/settings/pages)
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**
+3. Re-run the **Deploy docs to GitHub Pages** workflow (or push to `main`/`dev`)
+
+Until Pages is enabled, the deploy job is skipped with a warning (build still succeeds).
+
 ## Social link previews
 
 `docs/social-preview.png` and `site/social-preview.png` (1280×640) are included in the repo ([#28](https://github.com/loopmark-opensource/loopmark-agent/issues/28)).
