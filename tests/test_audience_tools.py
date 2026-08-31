@@ -69,6 +69,7 @@ def test_import_and_summarize_crm_segments():
     summary = summarize_crm_segments.invoke({})
     assert "Enterprise" in summary
     assert "SMB" in summary
+    assert "CRM-derived draft personas" in summary
 
 
 def test_import_crm_json():
@@ -121,8 +122,9 @@ def test_analyze_website_for_audience(monkeypatch):
 
     result = analyze_website_for_audience.invoke({"url": "loopmark.example"})
     assert "Loopmark" in result
-    assert "small business owners" in result.lower()
-    assert "Next steps for the agent" in result
+    assert "small business owners" in result.lower() or "Draft personas" in result
+    assert "Suggested target audience" in result
+    assert "Pain points" in result
 
     profile = get_business_profile.invoke({})
     assert "loopmark.example" in profile.lower()

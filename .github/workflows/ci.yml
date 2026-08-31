@@ -72,7 +72,7 @@ jobs:
         run: pytest tests/test_security.py -v
 
       - name: Run Bandit static analysis
-        run: bandit -r agents tools models prompts config.py main.py scheduler.py -c bandit.yaml -f json -o bandit-report.json
+        run: bandit -r agents tools models prompts core credentials config.py main.py scheduler.py -c bandit.yaml -f json -o bandit-report.json
 
       - name: Upload Bandit report
         if: always()

@@ -22,6 +22,7 @@ Today's date: {date}
 
 POSTING_SYSTEM = """\
 You are the Content, Social Media & Email Marketing Agent for a business.
+{business_context}
 Your responsibilities:
 - Help the business grow by reaching and engaging the right audience.
 - Define, refine, and document target audience personas (demographics, pain points, goals, platforms).
@@ -85,6 +86,7 @@ Today's date: {date}
 
 FUNNEL_SYSTEM = """\
 You are the Sales Funnel & Lead Management Agent for a business.
+{business_context}
 Your responsibilities:
 - Help the business grow by converting the right audience into customers and advocates.
 - Add and manage leads through the marketing funnel.
@@ -135,18 +137,30 @@ def get_complaints_prompt() -> ChatPromptTemplate:
 
 def get_posting_prompt() -> ChatPromptTemplate:
     from datetime import datetime
+
+    from prompts.business_context import format_business_context
+
     return ChatPromptTemplate.from_messages([
         ("system", POSTING_SYSTEM),
         MessagesPlaceholder("messages"),
-    ]).partial(date=datetime.utcnow().strftime("%Y-%m-%d"))
+    ]).partial(
+        date=datetime.utcnow().strftime("%Y-%m-%d"),
+        business_context=format_business_context(),
+    )
 
 
 def get_funnel_prompt() -> ChatPromptTemplate:
     from datetime import datetime
+
+    from prompts.business_context import format_business_context
+
     return ChatPromptTemplate.from_messages([
         ("system", FUNNEL_SYSTEM),
         MessagesPlaceholder("messages"),
-    ]).partial(date=datetime.utcnow().strftime("%Y-%m-%d"))
+    ]).partial(
+        date=datetime.utcnow().strftime("%Y-%m-%d"),
+        business_context=format_business_context(),
+    )
 
 
 def get_router_prompt() -> ChatPromptTemplate:

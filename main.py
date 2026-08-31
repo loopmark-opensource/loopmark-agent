@@ -3,14 +3,15 @@
 Marketing Agent — CLI entry point.
 
 Usage:
-    python main.py                  # interactive chat mode
-    python main.py --help
+    loopmark-agent chat             # interactive chat (after pip install)
+    loopmark-agent stats
+    python main.py chat             # from a local clone
 """
 
 from __future__ import annotations
 
-import sys
 import os
+import sys
 
 import typer
 from rich.console import Console
@@ -18,20 +19,13 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.theme import Theme
-from langchain_core.messages import HumanMessage, AIMessage
 
-# ─── Bootstrap ───────────────────────────────────────────────────────────────
-
-# Ensure workspace root is on the path
-sys.path.insert(0, os.path.dirname(__file__))
+# Allow running from a source checkout without installing the package.
+_REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
 from config import config
-
-if not config.OPENAI_API_KEY or config.OPENAI_API_KEY.startswith("sk-..."):
-    print("ERROR: Set OPENAI_API_KEY in your .env file (copy .env.example → .env).")
-    sys.exit(1)
-
-from agents.graph import get_marketing_graph
 
 # ─── Rich theme ──────────────────────────────────────────────────────────────
 
@@ -62,7 +56,20 @@ INTENT_LABELS = {
 
 # ─── CLI app ─────────────────────────────────────────────────────────────────
 
-app = typer.Typer(add_completion=False, help="Marketing Agent CLI")
+app = typer.Typer(
+    add_completion=False,
+    help="Loopmark Agent — open-source LangGraph marketing CLI",
+    no_args_is_help=True,
+)
+
+
+def _require_api_key() -> None:
+    if not config.OPENAI_API_KEY or config.OPENAI_API_KEY.startswith("sk-..."):
+        console.print(
+            "[error]ERROR:[/error] Set OPENAI_API_KEY in your .env file "
+            "(copy .env.example → .env), or export it in your shell."
+        )
+        raise typer.Exit(code=1)
 
 
 @app.command()
@@ -71,12 +78,15 @@ def chat(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show routing intent labels"),
 ):
     """Start an interactive marketing agent session."""
+    _require_api_key()
+
+    from core.run import run_agent
+
     if model:
         config.OPENAI_MODEL = model
 
     console.print(BANNER, style="bold blue")
 
-    graph = get_marketing_graph()
     conversation_messages: list = []
 
     while True:
@@ -93,24 +103,15 @@ def chat(
             console.print("[info]Goodbye![/info]")
             break
 
-        conversation_messages.append(HumanMessage(content=user_text))
-
         try:
-            result = graph.invoke({"messages": conversation_messages})
+            result = run_agent(user_text, history=conversation_messages, model=model)
         except Exception as exc:
             console.print(f"[error]Agent error:[/error] {exc}")
             continue
 
-        # Update conversation history
-        conversation_messages = result["messages"]
-
-        # Extract the last AI message
-        ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
-        if not ai_messages:
-            continue
-        reply = ai_messages[-1].content
-
-        intent = result.get("intent", "unknown")
+        conversation_messages = result.messages
+        reply = result.reply
+        intent = result.intent
         label = INTENT_LABELS.get(intent, "🤖  Agent")
 
         if verbose:
