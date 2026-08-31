@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install · Loopmark Agent</title>
+<meta name="description" content="Install Loopmark Agent via pip or from source with Python 3.10+.">
+<link rel="canonical" href="https://loopmark-opensource.github.io/loopmark-agent/install.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Install · Loopmark Agent">
+<meta property="og:description" content="Install Loopmark Agent via pip or from source with Python 3.10+.">
+<meta property="og:url" content="https://loopmark-opensource.github.io/loopmark-agent/install.html">
+<meta property="og:image" content="https://loopmark-opensource.github.io/loopmark-agent/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Install · Loopmark Agent">
+<meta name="twitter:description" content="Install Loopmark Agent via pip or from source with Python 3.10+.">
+<meta name="twitter:image" content="https://loopmark-opensource.github.io/loopmark-agent/social-preview.png">
+<link rel="stylesheet" href="styles.css">
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Loopmark Agent",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Cross-platform",
+  "description": "Open-source LangGraph AI marketing agent for social content, email campaigns, audience research, lead funnel management, and auto-posting.",
+  "softwareVersion": "1.0.0",
+  "license": "https://opensource.org/licenses/MIT",
+  "url": "https://loopmark-opensource.github.io/loopmark-agent",
+  "codeRepository": "https://github.com/loopmark-opensource/loopmark-agent",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}</script>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <a class="brand" href="index.html">Loopmark Agent</a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="features.html">Features</a>
+      <a href="install.html">Install</a>
+      <a href="audience-research.html">Audience</a>
+      <a href="api.html">API</a>
+      <a href="https://github.com/loopmark-opensource/loopmark-agent">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<h1>Installation</h1>
+<p class="lead">Python 3.10+ and an OpenAI API key. Optional social credentials for live posting.</p>
+<h2>pip install</h2>
+<pre><code>pip install loopmark-agent
+export OPENAI_API_KEY=sk-your-key
+loopmark-agent chat
+loopmark-agent stats</code></pre>
+<p>Data files are written to <code>./data</code> in your working directory. Override with <code>DATA_DIR</code>.</p>
+<h2>From source</h2>
+<pre><code>git clone https://github.com/loopmark-opensource/loopmark-agent.git
+cd loopmark-agent
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e .
+cp .env.example .env
+loopmark-agent chat</code></pre>
+<h2>Optional integrations</h2>
+<ul>
+  <li>Twitter/X, LinkedIn, Buffer — set credentials in <code>.env</code></li>
+  <li>Local scheduler — <code>python scheduler.py</code> for due posts</li>
+</ul>
+
+</main>
+
+<footer>
+  <p>MIT licensed · <a href="https://github.com/loopmark-opensource/loopmark-agent">View source on GitHub</a></p>
+</footer>
+
+</body>
+</html>
