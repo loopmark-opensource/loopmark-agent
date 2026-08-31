@@ -9,7 +9,7 @@ Set these on [github.com/loopmark-opensource/loopmark-agent/settings](https://gi
 | Field | Recommended value |
 |---|---|
 | **Description** | Open-source LangGraph AI marketing agent — social content, email campaigns, audience research, lead funnel, auto-posting |
-| **Website** | Link to docs site or README when available |
+| **Website** | https://loopmark-opensource.github.io/loopmark-agent/ |
 | **Topics** | See list below |
 
 ### Recommended topics
@@ -79,28 +79,34 @@ Target these phrases in docs, issues, and release notes:
 |---|---|
 | **Awesome lists** | PR to awesome-langchain, awesome-ai-agents |
 | **PyPI** | Package is buildable via `pyproject.toml`; publish with the `Publish to PyPI` workflow on release ([#26](https://github.com/loopmark-opensource/loopmark-agent/issues/26)) |
-| **GitHub Pages** | Docs site with meta description + sitemap |
+| **GitHub Pages** | Static docs at `/site` — see [site index](https://loopmark-opensource.github.io/loopmark-agent/) ([#27](https://github.com/loopmark-opensource/loopmark-agent/issues/27)) |
 | **Product Hunt / Hacker News** | Launch when web UI ships |
 | **Dev.to / Medium** | Tutorial: "Build a marketing agent with LangGraph" |
 
+## Docs site (GitHub Pages)
+
+Static docs live in `site/` and deploy via `.github/workflows/pages.yml`:
+
+- **URL:** https://loopmark-opensource.github.io/loopmark-agent/
+- **Pages:** features, install, audience research, programmatic API
+- **SEO:** meta description, Open Graph tags, `sitemap.xml`, `robots.txt`
+- **JSON-LD:** `SoftwareApplication` schema on every page ([#30](https://github.com/loopmark-opensource/loopmark-agent/issues/30))
+
+Rebuild locally:
+
+```bash
+python scripts/build_docs_site.py
+```
+
 ## Social link previews
 
-Add `docs/social-preview.png` (1280×640) and reference in GitHub **Settings → Social preview** so shared links show a branded image.
+`docs/social-preview.png` and `site/social-preview.png` (1280×640) are included in the repo ([#28](https://github.com/loopmark-opensource/loopmark-agent/issues/28)).
 
-## Structured data (future docs site)
+Upload the same image in GitHub **Settings → General → Social preview** so repository links show the branded card on Twitter/LinkedIn.
 
-When a docs site exists, add JSON-LD `SoftwareApplication` schema:
+## Structured data
 
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Loopmark Agent",
-  "applicationCategory": "BusinessApplication",
-  "operatingSystem": "Cross-platform",
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-}
-```
+JSON-LD `SoftwareApplication` is embedded in the docs site homepage and sibling pages. Validate with [Google Rich Results Test](https://search.google.com/test/rich-results).
 
 ## Measuring discoverability
 

@@ -8,7 +8,7 @@
 
 **Also known as:** marketing agent · AI content generator · social media automation · email marketing AI · lead funnel assistant · audience research tool
 
-**Repository:** [github.com/loopmark-opensource/loopmark-agent](https://github.com/loopmark-opensource/loopmark-agent)
+**Repository:** [github.com/loopmark-opensource/loopmark-agent](https://github.com/loopmark-opensource/loopmark-agent) · **Docs:** [loopmark-opensource.github.io/loopmark-agent](https://loopmark-opensource.github.io/loopmark-agent/)
 
 Open-source LangGraph marketing assistant — free to use, modify, and distribute under the [MIT License](LICENSE).
 

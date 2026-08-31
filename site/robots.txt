@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://loopmark-opensource.github.io/loopmark-agent/sitemap.xml

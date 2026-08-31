@@ -39,6 +39,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
+      - name: Verify docs site build
+        run: |
+          python scripts/build_docs_site.py
+          git diff --exit-code site/*.html site/sitemap.xml site/robots.txt
+
       - name: Run tests
         env:
           OPENAI_API_KEY: test-key-for-ci

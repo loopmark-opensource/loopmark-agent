@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API · Loopmark Agent</title>
+<meta name="description" content="Programmatic run_agent API for Loopmark Agent integrations.">
+<link rel="canonical" href="https://loopmark-opensource.github.io/loopmark-agent/api.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="API · Loopmark Agent">
+<meta property="og:description" content="Programmatic run_agent API for Loopmark Agent integrations.">
+<meta property="og:url" content="https://loopmark-opensource.github.io/loopmark-agent/api.html">
+<meta property="og:image" content="https://loopmark-opensource.github.io/loopmark-agent/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="API · Loopmark Agent">
+<meta name="twitter:description" content="Programmatic run_agent API for Loopmark Agent integrations.">
+<meta name="twitter:image" content="https://loopmark-opensource.github.io/loopmark-agent/social-preview.png">
+<link rel="stylesheet" href="styles.css">
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Loopmark Agent",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Cross-platform",
+  "description": "Open-source LangGraph AI marketing agent for social content, email campaigns, audience research, lead funnel management, and auto-posting.",
+  "softwareVersion": "1.0.0",
+  "license": "https://opensource.org/licenses/MIT",
+  "url": "https://loopmark-opensource.github.io/loopmark-agent",
+  "codeRepository": "https://github.com/loopmark-opensource/loopmark-agent",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}</script>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <a class="brand" href="index.html">Loopmark Agent</a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="features.html">Features</a>
+      <a href="install.html">Install</a>
+      <a href="audience-research.html">Audience</a>
+      <a href="api.html">API</a>
+      <a href="https://github.com/loopmark-opensource/loopmark-agent">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<h1>Programmatic API</h1>
+<p class="lead">Use <code>core.run.run_agent()</code> from Python backends, scripts, or a future hosted API.</p>
+<pre><code>from core.run import run_agent
+
+result = run_agent("Draft a LinkedIn post about our product launch")
+print(result.reply)
+print(result.intent)  # posting | complaint | funnel</code></pre>
+<h2>AgentResult</h2>
+<ul>
+  <li><code>reply</code> — assistant text for this turn</li>
+  <li><code>intent</code> — routed agent name</li>
+  <li><code>messages</code> — full LangChain message history for multi-turn chat</li>
+</ul>
+<h2>CLI equivalent</h2>
+<pre><code>loopmark-agent chat
+loopmark-agent stats</code></pre>
+<p>The CLI wraps the same graph via <code>main.py</code>. Hosted REST endpoints are tracked separately for the paid layer.</p>
+
+</main>
+
+<footer>
+  <p>MIT licensed · <a href="https://github.com/loopmark-opensource/loopmark-agent">View source on GitHub</a></p>
+</footer>
+
+</body>
+</html>
