@@ -132,6 +132,7 @@ def _empty_site_result(url: str, error: str = "") -> dict[str, Any]:
         "paragraphs": [],
         "structured_data": "",
         "social_links": {},
+        "social_presence": [],
         "problem_phrases": [],
         "snippet": "",
     }
@@ -155,17 +156,222 @@ def _extract_json_ld_text(raw: str) -> str:
 def _extract_social_links(raw_html: str) -> dict[str, str]:
     links: dict[str, str] = {}
     patterns = {
+        "linkedin": r'https?://(?:[\w.-]+\.)?linkedin\.com/(?:company|in|school)/[A-Za-z0-9_%./-]+',
+        "twitter": r'https?://(?:[\w.-]+\.)?(?:twitter|x)\.com/[A-Za-z0-9_./-]+',
+        "facebook": r'https?://(?:[\w.-]+\.)?facebook\.com/[A-Za-z0-9_.-]+',
+        "instagram": r'https?://(?:www\.)?instagram\.com/[A-Za-z0-9_.]+(?:\?[^"\'\s<>]*)?',
+        "youtube": r'https?://(?:[\w.-]+\.)?youtube\.com/(?:@|channel/|c/)[A-Za-z0-9_./-]+',
+        "tiktok": r'https?://(?:[\w.-]+\.)?tiktok\.com/@[A-Za-z0-9_.-]+',
+    }
+    href_patterns = {
         "linkedin": r'href=["\']?(https?://(?:[\w.-]+\.)?linkedin\.com/[^"\'#\s>]+)',
         "twitter": r'href=["\']?(https?://(?:[\w.-]+\.)?(?:twitter|x)\.com/[^"\'#\s>]+)',
         "facebook": r'href=["\']?(https?://(?:[\w.-]+\.)?facebook\.com/[^"\'#\s>]+)',
         "instagram": r'href=["\']?(https?://(?:[\w.-]+\.)?instagram\.com/[^"\'#\s>]+)',
         "youtube": r'href=["\']?(https?://(?:[\w.-]+\.)?youtube\.com/[^"\'#\s>]+)',
+        "tiktok": r'href=["\']?(https?://(?:[\w.-]+\.)?tiktok\.com/[^"\'#\s>]+)',
     }
     for platform, pattern in patterns.items():
-        match = re.search(pattern, raw_html, re.I)
-        if match:
-            links[platform] = html.unescape(match.group(1).rstrip("'\""))
+        candidates = [html.unescape(m.group(0).rstrip("'\"")) for m in re.finditer(pattern, raw_html, re.I)]
+        for href_pattern in (href_patterns.get(platform),):
+            if href_pattern:
+                candidates.extend(
+                    html.unescape(m.group(1).rstrip("'\""))
+                    for m in re.finditer(href_pattern, raw_html, re.I)
+                )
+        best = _pick_best_social_url(platform, candidates)
+        if best:
+            links[platform] = best
+    links.update(_social_links_from_structured_data(raw_html))
     return links
+
+
+def _pick_best_social_url(platform: str, candidates: list[str]) -> str:
+    scored: list[tuple[int, str]] = []
+    for url in candidates:
+        lower = url.lower()
+        if any(x in lower for x in ("/share", "sharer", "/intent/", "sharearticle", "login")):
+            continue
+        if platform == "instagram" and any(x in lower for x in ("/p/", "/reel/", "/tv/")):
+            continue
+        score = 1
+        if platform == "linkedin" and "/company/" in lower:
+            score = 10
+        elif platform == "linkedin" and "/in/" in lower:
+            score = 7
+        elif platform == "instagram":
+            score = 8
+        elif platform == "youtube" and ("/@" in lower or "/channel/" in lower):
+            score = 9
+        scored.append((score, url.split("?")[0].rstrip("/")))
+    if not scored:
+        return ""
+    scored.sort(key=lambda item: item[0], reverse=True)
+    return scored[0][1]
+
+
+def _social_links_from_structured_data(raw_html: str) -> dict[str, str]:
+    links: dict[str, str] = {}
+    platform_hosts = {
+        "linkedin.com": "linkedin",
+        "twitter.com": "twitter",
+        "x.com": "twitter",
+        "facebook.com": "facebook",
+        "instagram.com": "instagram",
+        "youtube.com": "youtube",
+        "tiktok.com": "tiktok",
+    }
+    for match in re.finditer(
+        r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+        raw_html,
+        re.I | re.S,
+    ):
+        try:
+            data = json.loads(match.group(1))
+        except json.JSONDecodeError:
+            continue
+        stack = [data]
+        while stack:
+            node = stack.pop()
+            if isinstance(node, dict):
+                same_as = node.get("sameAs")
+                if isinstance(same_as, str):
+                    same_as = [same_as]
+                if isinstance(same_as, list):
+                    for item in same_as:
+                        if not isinstance(item, str):
+                            continue
+                        host = urlparse(item).netloc.lower().removeprefix("www.")
+                        for needle, platform in platform_hosts.items():
+                            if needle in host and platform not in links:
+                                links[platform] = item.split("?")[0].rstrip("/")
+                stack.extend(node.values())
+            elif isinstance(node, list):
+                stack.extend(node)
+    return links
+
+
+def _extract_open_graph_meta(raw_html: str) -> dict[str, str]:
+    meta: dict[str, str] = {}
+    for match in re.finditer(
+        r'<meta[^>]+(?:property|name)=["\']([^"\']+)["\'][^>]+content=["\']([^"\']*)["\']',
+        raw_html,
+        re.I,
+    ):
+        key = match.group(1).lower()
+        value = html.unescape(match.group(2).strip())
+        if value and key in ("og:title", "og:description", "description", "twitter:title", "twitter:description"):
+            meta[key] = value
+    for match in re.finditer(
+        r'<meta[^>]+content=["\']([^"\']*)["\'][^>]+(?:property|name)=["\']([^"\']+)["\']',
+        raw_html,
+        re.I,
+    ):
+        key = match.group(2).lower()
+        value = html.unescape(match.group(1).strip())
+        if value and key in ("og:title", "og:description", "description", "twitter:title", "twitter:description"):
+            meta.setdefault(key, value)
+    title_match = re.search(r"<title[^>]*>([^<]+)</title>", raw_html, re.I | re.S)
+    if title_match:
+        meta.setdefault("title", html.unescape(re.sub(r"\s+", " ", title_match.group(1)).strip()))
+    return meta
+
+
+def _fetch_page_raw(url: str, timeout: int = 8) -> tuple[str, str]:
+    try:
+        with httpx.Client(timeout=timeout, follow_redirects=True, headers=_FETCH_HEADERS) as client:
+            response = client.get(url)
+            response.raise_for_status()
+            return response.text[:80_000], ""
+    except httpx.HTTPError as exc:
+        return "", str(exc)
+
+
+def _crawl_social_profile(platform: str, url: str) -> dict[str, Any]:
+    raw, error = _fetch_page_raw(url)
+    if error:
+        return {
+            "platform": platform,
+            "url": url,
+            "status": "error",
+            "error": error,
+            "title": "",
+            "bio": "",
+        }
+    lower = raw.lower()
+    if any(
+        marker in lower
+        for marker in (
+            "sign in to continue",
+            "log in to instagram",
+            "join linkedin",
+            "authwall",
+            "login_required",
+        )
+    ):
+        return {
+            "platform": platform,
+            "url": url,
+            "status": "blocked",
+            "error": "Login wall — public preview not available",
+            "title": "",
+            "bio": "",
+        }
+
+    meta = _extract_open_graph_meta(raw)
+    title = meta.get("og:title") or meta.get("twitter:title") or meta.get("title", "")
+    bio = meta.get("og:description") or meta.get("twitter:description") or meta.get("description", "")
+    if not bio:
+        snippet = _strip_html(raw)[:400]
+        if _is_readable_text(snippet):
+            bio = snippet[:220]
+
+    return {
+        "platform": platform,
+        "url": url,
+        "status": "ok" if (title or bio) else "limited",
+        "error": "" if (title or bio) else "No public metadata found",
+        "title": title[:200],
+        "bio": bio[:400],
+    }
+
+
+def _crawl_social_presence(social_links: dict[str, str]) -> list[dict[str, Any]]:
+    priority = ("linkedin", "instagram", "twitter", "facebook", "youtube", "tiktok")
+    results: list[dict[str, Any]] = []
+    for platform in priority:
+        url = social_links.get(platform)
+        if not url:
+            continue
+        results.append(_crawl_social_profile(platform, url))
+    return results
+
+
+def _enrich_site_with_social_crawl(site: dict[str, Any]) -> dict[str, Any]:
+    links = dict(site.get("social_links") or {})
+    if not links:
+        site["social_presence"] = []
+        return site
+
+    presence = _crawl_social_presence(links)
+    site["social_presence"] = presence
+
+    social_text_parts: list[str] = []
+    for profile in presence:
+        if profile.get("title"):
+            social_text_parts.append(profile["title"])
+        if profile.get("bio"):
+            social_text_parts.append(profile["bio"])
+
+    if social_text_parts:
+        social_text = " ".join(social_text_parts)
+        existing = list(site.get("problem_phrases") or [])
+        for phrase in _extract_problem_language(social_text):
+            if phrase not in existing:
+                existing.append(phrase)
+        site["problem_phrases"] = existing
+
+    return site
 
 
 def _clean_pain_phrase(text: str, max_len: int = 120) -> str:
@@ -275,6 +481,12 @@ def _pain_points_from_online_presence(
     for phrase in site.get("problem_phrases") or []:
         if phrase not in pains:
             pains.append(phrase)
+
+    for profile in site.get("social_presence") or []:
+        bio = (profile.get("bio") or "").strip()
+        if bio and _is_readable_text(bio):
+            pains.extend(_extract_problem_language(bio))
+
     pains.extend(_pain_from_headings(site))
     pains.extend(_pain_from_presence_and_offerings(context, offerings))
 
@@ -296,13 +508,33 @@ def fetch_site_summary(url: str, timeout: int = 10) -> dict[str, Any]:
     if parsed.scheme not in _ALLOWED_SCHEMES:
         return _empty_site_result(fetch_url, f"Unsupported URL scheme: {parsed.scheme}")
 
+    social_links: dict[str, str] = {}
     try:
         with httpx.Client(timeout=timeout, follow_redirects=True, headers=_FETCH_HEADERS) as client:
             response = client.get(fetch_url)
             response.raise_for_status()
-            raw = response.text[:120_000]
+            full_text = response.text
+            raw = full_text[:120_000]
+            social_links = _extract_social_links(full_text)
     except httpx.HTTPError as exc:
         return _empty_site_result(fetch_url, str(exc))
+
+    if not social_links:
+        try:
+            with httpx.Client(
+                timeout=timeout,
+                follow_redirects=True,
+                headers={"User-Agent": "Mozilla/5.0"},
+            ) as client:
+                retry = client.get(fetch_url)
+                retry.raise_for_status()
+                full_text = retry.text
+                retry_raw = full_text[:120_000]
+                social_links = _extract_social_links(full_text)
+                if social_links:
+                    raw = retry_raw
+        except httpx.HTTPError:
+            pass
 
     parser = _PageMetaParser()
     try:
@@ -338,7 +570,8 @@ def fetch_site_summary(url: str, timeout: int = 10) -> dict[str, Any]:
         "subheadings": " · ".join(parser.h2),
         "paragraphs": parser.paragraphs[:5],
         "structured_data": _extract_json_ld_text(raw),
-        "social_links": _extract_social_links(raw),
+        "social_links": social_links,
+        "social_presence": [],
         "problem_phrases": _extract_problem_language(presence_text),
         "snippet": snippet,
     }
@@ -516,6 +749,7 @@ def _build_research_findings(
     pain_points: list[str] | None = None,
 ) -> dict[str, Any]:
     social = site.get("social_links") or {}
+    social_presence = site.get("social_presence") or []
     return {
         "url": site.get("url", ""),
         "page_title": site.get("title", ""),
@@ -526,6 +760,7 @@ def _build_research_findings(
         "key_phrases_from_site": key_phrases,
         "pain_points_from_online_presence": pain_points or [],
         "social_profiles_found": list(social.values()),
+        "social_presence": social_presence,
         "paragraphs_analyzed": list(site.get("paragraphs") or [])[:3],
         "analysis_method": analysis_source,
     }
@@ -541,6 +776,12 @@ def _site_research_context(site: dict[str, Any]) -> str:
         " ".join(site.get("paragraphs") or []),
         site.get("structured_data", ""),
         " ".join((site.get("social_links") or {}).values()),
+        " ".join(
+            part
+            for profile in (site.get("social_presence") or [])
+            for part in (profile.get("title", ""), profile.get("bio", ""))
+            if part
+        ),
     ]
     return " ".join(p.strip() for p in parts if p and p.strip())
 
@@ -595,7 +836,7 @@ Return valid JSON (no markdown) with this shape:
 
 Rules:
 - Derive every field from the website copy. Do not use generic filler.
-- pain_points MUST be inferred from the company's online presence.
+- pain_points MUST be inferred from the company's online presence: website copy, headings, services promoted, and social profiles (LinkedIn, Instagram, etc.) when available.
 - suggested_target_audience MUST describe WHO is interested AND what services/products from the site they care about.
 - Provide exactly 2 personas.
 - Reference specific services, industries, or value props found on the site.
@@ -834,5 +1075,6 @@ def research_audience(
     site = fetch_site_summary(url)
     if description and not site.get("description"):
         site["description"] = description
+    site = _enrich_site_with_social_crawl(site)
 
     return personas_from_website(site, product_name, existing_audience, openai_api_key)
