@@ -96,6 +96,25 @@ All agents are **ReAct** agents built with LangGraph. Data is persisted as JSON 
 
 ## Installation
 
+### Option A — pip (recommended)
+
+```bash
+pip install loopmark-agent
+
+# Configure your OpenAI key
+export OPENAI_API_KEY=sk-your-actual-key-here
+# or create a .env in the directory where you run the CLI
+
+loopmark-agent chat
+loopmark-agent stats
+```
+
+JSON data files are written to `./data` under your current working directory (override with `DATA_DIR`).
+
+> If the package is not on PyPI yet, use Option B or `pip install git+https://github.com/loopmark-opensource/loopmark-agent.git`.
+
+### Option B — clone from source
+
 ```bash
 # 1. Enter the project
 cd marketing-agent
@@ -104,8 +123,8 @@ cd marketing-agent
 python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 
-# 3. Install dependencies
-pip install -r requirements.txt
+# 3. Install the package (editable) + dependencies
+pip install -e .
 
 # 4. Configure environment
 cp .env.example .env
@@ -117,6 +136,12 @@ Edit `.env` and set your OpenAI key:
 OPENAI_API_KEY=sk-your-actual-key-here
 ```
 
+Then run:
+
+```bash
+loopmark-agent chat
+# or: python main.py chat
+```
 ---
 
 ## Configuration
@@ -703,7 +728,7 @@ Free under MIT. Run locally or self-host with your own keys:
 | Included | Details |
 |---|---|
 | LangGraph agents | Complaints, Posting, Funnel sub-agents |
-| CLI | `python3 main.py` interactive chat |
+| CLI | `loopmark-agent chat` interactive session |
 | Tools | Content, email drafts, funnel, audience research, publishing |
 | Storage | Local JSON via `storage/` (complaints, leads, posts, personas) |
 | Credentials | BYOK — your `.env` keys via `credentials/` |
@@ -769,7 +794,7 @@ Do not commit secrets. Keep API keys in `.env` only — this file is gitignored.
 Run the test suite locally:
 
 ```bash
-pip install -r requirements.txt -r requirements-dev.txt
+pip install -e ".[dev]"
 OPENAI_API_KEY=test-key-for-ci pytest
 ```
 
