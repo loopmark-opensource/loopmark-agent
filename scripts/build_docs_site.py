@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 SITE_DIR = Path(__file__).resolve().parent.parent / "site"
@@ -15,6 +16,16 @@ DESCRIPTION = (
     "audience research, lead funnel management, and auto-posting."
 )
 OG_IMAGE = f"{SITE_URL}/social-preview.png"
+THEME_COLOR = "#009E96"
+
+
+def stylesheet_href() -> str:
+    """Cache-bust styles.css so browsers pick up theme changes after deploy."""
+    css_path = SITE_DIR / "styles.css"
+    if css_path.is_file():
+        digest = hashlib.sha256(css_path.read_bytes()).hexdigest()[:10]
+        return f"styles.css?v={digest}"
+    return "styles.css"
 
 JSON_LD = f"""{{
   "@context": "https://schema.org",
@@ -78,7 +89,8 @@ def page(title: str, path: str, body: str, description: str | None = None) -> st
 <meta name="twitter:title" content="{full_title}">
 <meta name="twitter:description" content="{page_desc}">
 <meta name="twitter:image" content="{OG_IMAGE}">
-<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="{THEME_COLOR}">
+<link rel="stylesheet" href="{stylesheet_href()}">
 <script type="application/ld+json">{JSON_LD}</script>
 </head>
 <body>
