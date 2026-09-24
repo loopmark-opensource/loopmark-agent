@@ -54,9 +54,9 @@ jobs:
           STATUS=$(gh api "repos/${{ github.repository }}/pages" --jq .status 2>/dev/null)
           CODE=$?
           set -e
-          if [[ $CODE -eq 0 && -n "$STATUS" ]]; then
+          if [[ $CODE -eq 0 ]]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
-            echo "GitHub Pages is configured (status: $STATUS)."
+            echo "GitHub Pages is configured (status: ${STATUS:-building})."
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "::warning::GitHub Pages is not enabled. Enable it once: Settings → Pages → Build and deployment → Source: GitHub Actions"
