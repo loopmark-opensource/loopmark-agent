@@ -9,6 +9,7 @@ SITE_DIR = Path(__file__).resolve().parent.parent / "site"
 SITE_NAME = "Loopmark Agent"
 SITE_URL = "https://loopmark-opensource.github.io/loopmark-agent"
 REPO_URL = "https://github.com/loopmark-opensource/loopmark-agent"
+LOOPMARK_WEB_URL = "https://main.d3b5sf354a54dh.amplifyapp.com/"
 DESCRIPTION = (
     "Open-source LangGraph AI marketing agent for social content, email campaigns, "
     "audience research, lead funnel management, and auto-posting."
@@ -43,14 +44,15 @@ NAV = """
       <a href="audience-research.html">Audience</a>
       <a href="api.html">API</a>
       <a href="{repo}">GitHub</a>
+      <a class="nav-cta" href="{web}">Loopmark website</a>
     </nav>
   </div>
 </header>
-""".format(repo=REPO_URL)
+""".format(repo=REPO_URL, web=LOOPMARK_WEB_URL)
 
 FOOTER = f"""
 <footer>
-  <p>MIT licensed · <a href="{REPO_URL}">View source on GitHub</a></p>
+  <p>MIT licensed · <a href="{REPO_URL}">View source on GitHub</a> · <a href="{LOOPMARK_WEB_URL}">Loopmark product site</a></p>
 </footer>
 """
 
@@ -96,10 +98,12 @@ PAGES: dict[str, tuple[str, str, str, str | None]] = {
         "/",
         """
 <section class="hero">
+  <p class="site-banner">Looking for the full Loopmark experience? Visit the <a href="{web}">Loopmark website</a> — product overview, pricing, and FAQs.</p>
   <h1>Open-source LangGraph marketing agent</h1>
   <p class="lead">Social content, email campaigns, audience research, lead funnel management, and auto-posting — from a Python CLI you self-host with your own API keys.</p>
   <div class="cta-row">
     <a class="button" href="install.html">Get started</a>
+    <a class="button secondary" href="{web}">Loopmark website</a>
     <a class="button secondary" href="{repo}">Star on GitHub</a>
   </div>
 </section>
@@ -115,7 +119,7 @@ PAGES: dict[str, tuple[str, str, str, str | None]] = {
   <li>LangGraph router sends each request to the right specialist agent</li>
   <li>Programmatic API via <code>run_agent()</code> for backends and automations</li>
 </ul>
-""".format(repo=REPO_URL),
+""".format(repo=REPO_URL, web=LOOPMARK_WEB_URL),
         DESCRIPTION,
     ),
     "features.html": (
