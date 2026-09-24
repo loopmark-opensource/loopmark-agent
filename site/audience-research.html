@@ -63,6 +63,60 @@
 <h2>What is not included</h2>
 <p>Loopmark Agent does not connect to Meta Ads, LinkedIn Campaign Manager, Google Ads, or follower analytics APIs in the OSS edition. Audience research here means website + CRM + AI personas.</p>
 
+<h2>Data collection &amp; limits</h2>
+<p>This is <strong>not</strong> large-scale web scraping. Audience research uses small, user-initiated fetches to help draft marketing personas.</p>
+
+<h3>What the agent may fetch</h3>
+<ul>
+  <li><strong>Website URL (you provide)</strong> — one HTTP GET of public HTML per analysis. We parse title, meta tags, headings, and body copy. Response size is capped; requests time out after a few seconds.</li>
+  <li><strong>Social profile links on that site</strong> — optional follow-up GET of public profile pages (LinkedIn, Instagram, X, etc.) to read Open Graph / title / description when available. Many platforms return login walls; we mark those as blocked and do not bypass authentication.</li>
+  <li><strong>CRM files (you upload)</strong> — CSV or JSON you export from your own CRM. Nothing is pulled from third-party CRM APIs in the OSS edition.</li>
+  <li><strong>Business profile (you enter)</strong> — product name, tone, audience description, website URL stored locally for reuse.</li>
+</ul>
+
+<h3>What we do not do</h3>
+<ul>
+  <li>No crawling sitemaps, search results, or competitor databases at scale</li>
+  <li>No ad-platform or social analytics APIs (followers, ad spend, lookalikes)</li>
+  <li>No circumventing rate limits, CAPTCHAs, or login walls</li>
+  <li>No resale or sharing of fetched or imported data</li>
+</ul>
+
+<h3>Operational limits (self-hosted)</h3>
+<p>Volume is intentionally low (on-demand, per user action). If you deploy for many users or geos, you are responsible for robots.txt, site terms, request politeness, and infrastructure (including proxies) where appropriate.</p>
+
+<h2>PII &amp; privacy</h2>
+<p>When you self-host Loopmark Agent, <strong>you</strong> are responsible for how personal data is collected, stored, and processed. The OSS agent stores data locally under <code>data/</code> (JSON files) unless you integrate your own backend.</p>
+
+<h3>Where PII can appear</h3>
+<table>
+  <thead>
+    <tr><th>Feature</th><th>Typical fields</th><th>Storage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>CRM import</td><td>Name, email, company, job title, tags, segment</td><td><code>data/</code> (imported rows / personas)</td></tr>
+    <tr><td>Funnel / leads</td><td>Name, email, company, notes, score</td><td><code>data/leads.json</code></td></tr>
+    <tr><td>Complaints</td><td>Customer name, email, message</td><td><code>data/complaints.json</code></td></tr>
+    <tr><td>Website analysis</td><td>Usually no individual PII; public marketing copy only</td><td>Transient / persona drafts</td></tr>
+    <tr><td>Social public fetch</td><td>Public bio/title text only when pages are accessible</td><td>Enrichment on analysis result</td></tr>
+  </tbody>
+</table>
+
+<h3>Third parties</h3>
+<ul>
+  <li><strong>OpenAI</strong> — persona and content tools may send website excerpts, CRM summaries, or messages you provide to the model API. Review <a href="https://openai.com/policies" rel="noopener noreferrer">OpenAI’s policies</a> and use enterprise / zero-retention options if your compliance program requires them.</li>
+  <li><strong>Twitter, LinkedIn, Buffer</strong> — only when you configure publishing; not used for audience scraping.</li>
+</ul>
+
+<h3>Recommendations</h3>
+<ul>
+  <li>Do not commit <code>data/</code>, CRM exports, or <code>.env</code> to git.</li>
+  <li>Import the minimum CRM columns needed (avoid full contact dumps when anonymized segments are enough).</li>
+  <li>Honor GDPR, CCPA, and local rules for consent, retention, and deletion when processing customer or lead data.</li>
+  <li>Redact or delete JSON files when offboarding users or closing a deployment.</li>
+</ul>
+<p>Questions from partners or reviewers? Point them to this page and the <a href="https://github.com/loopmark-opensource/loopmark-agent#data-collection-limits--pii">README section</a>.</p>
+
 </main>
 
 <footer>

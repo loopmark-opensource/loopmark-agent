@@ -167,3 +167,29 @@ footer {
   border: 1px solid var(--border);
   color: var(--text);
 }
+
+h3 {
+  margin-top: 1.25rem;
+  font-size: 1.05rem;
+}
+
+main table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  margin: 1rem 0;
+}
+
+main table th,
+main table td {
+  border: 1px solid var(--border);
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+main table th {
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 600;
+}

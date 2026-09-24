@@ -67,6 +67,46 @@ A LangGraph-powered AI marketing assistant with three specialised sub-agents. Yo
 
 > **Note:** This agent does not connect to Meta Ads, LinkedIn Campaign Manager, Google Ads, or social follower analytics APIs. Audience finding here = saved profile + website analysis + CRM import + AI personas.
 
+**Docs:** [Audience research · data collection & PII](https://loopmark-opensource.github.io/loopmark-agent/audience-research.html#data-collection--limits)
+
+---
+
+## Data collection, limits & PII
+
+Audience research is **user-initiated marketing intelligence**, not large-scale scraping. See also the [site docs](https://loopmark-opensource.github.io/loopmark-agent/audience-research.html).
+
+### What may be fetched or imported
+
+| Source | Behavior | Limits |
+|---|---|---|
+| **Website URL** (you provide) | Single public HTTP GET; parse HTML for title, meta, headings, copy | Timeout + response size cap; no sitemap crawl |
+| **Social links on that site** | Optional public-page fetch for OG/title/bio when not login-walled | No auth bypass; many platforms return `blocked` |
+| **CRM CSV/JSON** (you upload) | Columns such as segment, name, email, company, industry, job title, tags | No CRM API sync in OSS |
+| **Business profile** (you enter) | Product, tone, audience, website — stored locally | Typically not individual PII |
+
+### What we do not do
+
+- Crawl at scale, scrape ad platforms, or harvest social follower lists  
+- Circumvent CAPTCHAs, rate limits, or login walls  
+- Resell or share fetched or imported data  
+
+Self-hosted operators are responsible for **robots.txt**, site terms, request politeness, and scaling infrastructure (e.g. proxies) if needed.
+
+### PII when self-hosting
+
+You act as the **data controller**. The agent persists JSON under `data/` (or your configured `DATA_DIR`):
+
+| Feature | Typical PII fields | File / area |
+|---|---|---|
+| CRM import | Name, email, company, job title | Import + persona records in `data/` |
+| Funnel / leads | Name, email, company, notes | `data/leads.json` |
+| Complaints | Customer name, email, message | `data/complaints.json` |
+| Website / social fetch | Public marketing text; rarely individual PII | Used for drafts; not a contact database |
+
+**Third parties:** OpenAI receives prompts you trigger (website excerpts, CRM summaries, chat). Configure keys in `.env` only; review [OpenAI policies](https://openai.com/policies). Publishing integrations (Twitter, LinkedIn, Buffer) are separate and opt-in.
+
+**Recommendations:** Do not commit `data/` or CRM exports; import minimal columns; meet GDPR/CCPA/consent requirements for your jurisdiction; delete local JSON when offboarding users.
+
 ---
 
 ## Architecture
@@ -786,6 +826,8 @@ See [docs/DISCOVERABILITY.md](docs/DISCOVERABILITY.md) for SEO, GitHub topics, a
 ### Security
 
 Do not commit secrets. Keep API keys in `.env` only — this file is gitignored. If you accidentally expose a key, rotate it immediately with your provider.
+
+Do not commit `data/` — it may contain **PII** (leads, complaints, CRM imports). See [Data collection, limits & PII](#data-collection-limits--pii).
 
 ---
 
