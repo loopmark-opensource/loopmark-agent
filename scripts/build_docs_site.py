@@ -16,6 +16,9 @@ DESCRIPTION = (
     "audience research, lead funnel management, and auto-posting."
 )
 OG_IMAGE = f"{SITE_URL}/social-preview.png"
+OG_IMAGE_WIDTH = 1280
+OG_IMAGE_HEIGHT = 720
+OG_IMAGE_ALT = "Loopmark Agent — open-source LangGraph marketing assistant"
 THEME_COLOR = "#009E96"
 
 
@@ -85,10 +88,14 @@ def page(title: str, path: str, body: str, description: str | None = None) -> st
 <meta property="og:description" content="{page_desc}">
 <meta property="og:url" content="{canonical}">
 <meta property="og:image" content="{OG_IMAGE}">
+<meta property="og:image:width" content="{OG_IMAGE_WIDTH}">
+<meta property="og:image:height" content="{OG_IMAGE_HEIGHT}">
+<meta property="og:image:alt" content="{OG_IMAGE_ALT}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{full_title}">
 <meta name="twitter:description" content="{page_desc}">
 <meta name="twitter:image" content="{OG_IMAGE}">
+<meta name="twitter:image:alt" content="{OG_IMAGE_ALT}">
 <meta name="theme-color" content="{THEME_COLOR}">
 <link rel="stylesheet" href="{stylesheet_href()}">
 <script type="application/ld+json">{JSON_LD}</script>
