@@ -1,0 +1,41 @@
+name: Feature request
+description: Suggest an improvement for the open-source agent
+title: "Feature: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem and idea. For hosted/paid roadmap items (UI, vault, billing), prefer commenting on [epic #1](https://github.com/loopmark-opensource/loopmark-agent/issues/1) instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do that is hard or missing today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How should it work? Keep it concrete if you can.
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Scope
+      description: Does this belong in the OSS CLI or the planned paid/hosted layer?
+      options:
+        - OSS (CLI / self-hosted)
+        - Paid / hosted roadmap
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional — other approaches you thought about.
+    validations:
+      required: false

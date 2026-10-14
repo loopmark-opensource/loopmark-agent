@@ -791,6 +791,8 @@ Roadmap items tracked as GitHub issues — **not available in this OSS repo**:
 
 ### Contributing
 
+Full guide: **[CONTRIBUTING.md](CONTRIBUTING.md)**
+
 | Want to… | Do this |
 |---|---|
 | Fix bugs, add OSS tools, improve agents | Open a PR on this repo |
@@ -812,14 +814,14 @@ See [LICENSE](LICENSE) for the full text.
 
 ### Contributing
 
-Contributions are welcome. To contribute:
+Contributions are welcome. See **[CONTRIBUTING.md](CONTRIBUTING.md)** for setup, tests, PR expectations, and the OSS vs paid boundary.
+
+Short version:
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/my-change`)
-3. Make your changes and test locally
-4. Open a pull request with a clear description
-
-Please keep changes focused and match the existing code style.
+2. Create a feature branch from `dev` (`git checkout -b feature/my-change`)
+3. Make your changes and run `OPENAI_API_KEY=test-key-for-ci pytest`
+4. Open a pull request against `dev` with a clear description
 
 See [docs/DISCOVERABILITY.md](docs/DISCOVERABILITY.md) for SEO, GitHub topics, and how to help the project get found online.
 

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Docs site
+    url: https://loopmark-opensource.github.io/loopmark-agent/
+    about: Install, features, and audience research docs
+  - name: Contributing guide
+    url: https://github.com/loopmark-opensource/loopmark-agent/blob/dev/CONTRIBUTING.md
+    about: Setup, tests, PR expectations, OSS vs paid boundary

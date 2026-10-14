@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import httpx
 
+from tools import audience_research
 from tools.audience_tools import (
     analyze_website_for_audience,
     get_audience_research_capabilities,
@@ -138,6 +139,92 @@ def test_analyze_website_fetch_error(monkeypatch):
 
     result = analyze_website_for_audience.invoke({"url": "https://offline.example"})
     assert "Could not fetch website" in result
+
+
+def test_personas_from_website_uses_llm_when_available(monkeypatch):
+    site = {
+        "url": "https://loopmark.example",
+        "title": "Loopmark | AI Marketing for Small Teams",
+        "description": "Automate social posts and email for SMB marketers.",
+        "keywords": "marketing, AI",
+        "headings": "Marketing made simple",
+        "subheadings": "For small business owners",
+        "paragraphs": ["Save time on content and grow your audience with AI."],
+        "social_links": {},
+        "social_presence": [],
+    }
+    llm_payload = {
+        "suggested_target_audience": "SMB marketers adopting AI for social and email",
+        "what_they_do": "AI marketing automation for small teams",
+        "suggested_business_goals": "Grow audience with less manual posting",
+        "suggested_audience_engagement": "Practical how-to posts and email tips",
+        "personas": [
+            {
+                "name": "Time-strapped SMB marketer",
+                "description": "Runs social and email for a small team using Loopmark AI tools",
+                "demographics": "Marketing lead at 5–50 person company",
+                "pain_points": [
+                    "Too little time to post consistently",
+                    "Hard to keep email and social aligned",
+                ],
+                "goals": ["Ship campaigns faster", "Reach more qualified leads"],
+                "platforms": ["linkedin", "email"],
+            },
+            {
+                "name": "Owner-operator",
+                "description": "Small business owner evaluating AI for content",
+                "demographics": "Founder, 30–50",
+                "pain_points": ["Needs clear ROI before adopting tools"],
+                "goals": ["Grow revenue"],
+                "platforms": ["instagram", "email"],
+            },
+        ],
+    }
+
+    monkeypatch.setattr(
+        audience_research,
+        "_analyze_with_llm",
+        lambda *args, **kwargs: llm_payload,
+    )
+
+    result = audience_research.personas_from_website(site, product_name="Loopmark")
+    assert result["analysis_source"] == "llm"
+    assert result["research_findings"]["analysis_method"] == "llm"
+    assert "SMB marketers" in result["suggested_target_audience"]
+    assert "Loopmark" in result["personas"][0]["description"] or "social" in result["personas"][0][
+        "description"
+    ].lower()
+    assert len(result["personas"]) == 2
+
+
+def test_personas_from_website_falls_back_without_llm(monkeypatch):
+    site = {
+        "url": "https://loopmark.example",
+        "title": "Loopmark | AI Marketing for Small Teams",
+        "description": "Automate social posts and email for SMB marketers.",
+        "keywords": "",
+        "headings": "Marketing made simple",
+        "subheadings": "For small business owners",
+        "paragraphs": ["Save time on content and grow your audience with AI."],
+        "social_links": {},
+        "social_presence": [],
+    }
+    monkeypatch.setattr(audience_research, "_analyze_with_llm", lambda *args, **kwargs: None)
+
+    result = audience_research.personas_from_website(site, product_name="Loopmark")
+    assert result["analysis_source"] == "website_content"
+    assert result["research_findings"]["analysis_method"] == "website_content"
+    assert result["personas"]
+    assert result["what_they_do"]
+    assert "email" in result["what_they_do"].lower() or "SMB" in result["what_they_do"]
+
+
+def test_personas_from_website_fallback_on_fetch_error():
+    site = {"url": "https://offline.example", "error": "connection refused", "title": "", "description": ""}
+    result = audience_research.personas_from_website(site)
+    assert result["analysis_source"] == "fallback"
+    assert result["research_findings"]["analysis_method"] == "fallback"
+    assert result["personas"]
 
 
 def test_import_crm_invalid_format():

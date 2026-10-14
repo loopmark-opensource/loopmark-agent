@@ -43,6 +43,10 @@ gh repo edit loopmark-opensource/loopmark-agent \
   --add-topic lead-generation --add-topic audience-research
 ```
 
+Or run the **Sync repo topics** workflow (`.github/workflows/sync-repo-topics.yml`) via Actions → workflow_dispatch. It is idempotent and safe to re-run.
+
+**Secret required:** `REPO_SETTINGS_TOKEN` — a PAT or fine-grained token with **Administration: Read and write** (or classic `repo` scope). `GITHUB_TOKEN` cannot update repository topics or description.
+
 ## PyPI package
 
 The project is packaged as **`loopmark-agent`**:
