@@ -537,10 +537,7 @@ def fetch_site_summary(url: str, timeout: int = 10) -> dict[str, Any]:
             pass
 
     parser = _PageMetaParser()
-    try:
-        parser.feed(raw)
-    except Exception:
-        pass
+    parser.feed(raw)
 
     title = parser.title.strip()
     description = parser.description.strip()

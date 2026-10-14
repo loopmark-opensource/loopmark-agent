@@ -3,17 +3,32 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 SITE_DIR = Path(__file__).resolve().parent.parent / "site"
 SITE_NAME = "Loopmark Agent"
 SITE_URL = "https://loopmark-opensource.github.io/loopmark-agent"
 REPO_URL = "https://github.com/loopmark-opensource/loopmark-agent"
+LOOPMARK_WEB_URL = "https://main.d3b5sf354a54dh.amplifyapp.com/"
 DESCRIPTION = (
     "Open-source LangGraph AI marketing agent for social content, email campaigns, "
     "audience research, lead funnel management, and auto-posting."
 )
 OG_IMAGE = f"{SITE_URL}/social-preview.png"
+OG_IMAGE_WIDTH = 1280
+OG_IMAGE_HEIGHT = 720
+OG_IMAGE_ALT = "Loopmark Agent, open-source LangGraph marketing assistant"
+THEME_COLOR = "#009E96"
+
+
+def stylesheet_href() -> str:
+    """Cache-bust styles.css so browsers pick up theme changes after deploy."""
+    css_path = SITE_DIR / "styles.css"
+    if css_path.is_file():
+        digest = hashlib.sha256(css_path.read_bytes()).hexdigest()[:10]
+        return f"styles.css?v={digest}"
+    return "styles.css"
 
 JSON_LD = f"""{{
   "@context": "https://schema.org",
@@ -43,14 +58,15 @@ NAV = """
       <a href="audience-research.html">Audience</a>
       <a href="api.html">API</a>
       <a href="{repo}">GitHub</a>
+      <a class="nav-cta" href="{web}">Loopmark website</a>
     </nav>
   </div>
 </header>
-""".format(repo=REPO_URL)
+""".format(repo=REPO_URL, web=LOOPMARK_WEB_URL)
 
 FOOTER = f"""
 <footer>
-  <p>MIT licensed · <a href="{REPO_URL}">View source on GitHub</a></p>
+  <p>MIT licensed · <a href="{REPO_URL}">View source on GitHub</a> · <a href="{LOOPMARK_WEB_URL}">Loopmark product site</a></p>
 </footer>
 """
 
@@ -72,11 +88,16 @@ def page(title: str, path: str, body: str, description: str | None = None) -> st
 <meta property="og:description" content="{page_desc}">
 <meta property="og:url" content="{canonical}">
 <meta property="og:image" content="{OG_IMAGE}">
+<meta property="og:image:width" content="{OG_IMAGE_WIDTH}">
+<meta property="og:image:height" content="{OG_IMAGE_HEIGHT}">
+<meta property="og:image:alt" content="{OG_IMAGE_ALT}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{full_title}">
 <meta name="twitter:description" content="{page_desc}">
 <meta name="twitter:image" content="{OG_IMAGE}">
-<link rel="stylesheet" href="styles.css">
+<meta name="twitter:image:alt" content="{OG_IMAGE_ALT}">
+<meta name="theme-color" content="{THEME_COLOR}">
+<link rel="stylesheet" href="{stylesheet_href()}">
 <script type="application/ld+json">{JSON_LD}</script>
 </head>
 <body>
@@ -96,10 +117,12 @@ PAGES: dict[str, tuple[str, str, str, str | None]] = {
         "/",
         """
 <section class="hero">
+  <p class="site-banner">Looking for the full Loopmark experience? Visit the <a href="{web}">Loopmark website</a> for product overview, pricing, and FAQs.</p>
   <h1>Open-source LangGraph marketing agent</h1>
-  <p class="lead">Social content, email campaigns, audience research, lead funnel management, and auto-posting — from a Python CLI you self-host with your own API keys.</p>
+  <p class="lead">Social content, email campaigns, audience research, lead funnel management, and auto-posting, from a Python CLI you self-host with your own API keys.</p>
   <div class="cta-row">
     <a class="button" href="install.html">Get started</a>
+    <a class="button secondary" href="{web}">Loopmark website</a>
     <a class="button secondary" href="{repo}">Star on GitHub</a>
   </div>
 </section>
@@ -111,11 +134,11 @@ PAGES: dict[str, tuple[str, str, str, str | None]] = {
 </div>
 <h2>Why Loopmark Agent?</h2>
 <ul>
-  <li>MIT licensed — run locally with JSON storage and BYOK credentials</li>
+  <li>MIT licensed; run locally with JSON storage and BYOK credentials</li>
   <li>LangGraph router sends each request to the right specialist agent</li>
   <li>Programmatic API via <code>run_agent()</code> for backends and automations</li>
 </ul>
-""".format(repo=REPO_URL),
+""".format(repo=REPO_URL, web=LOOPMARK_WEB_URL),
         DESCRIPTION,
     ),
     "features.html": (
@@ -132,8 +155,9 @@ PAGES: dict[str, tuple[str, str, str, str | None]] = {
 <ul><li>Eight funnel stages with lead scoring</li><li>Source reporting and nurture playbooks</li></ul>
 <h2>Audience research</h2>
 <ul><li>Save a reusable business profile</li><li>Analyze a website URL for persona signals</li><li>Import CRM CSV/JSON segments</li><li>Persist audience personas for campaigns</li></ul>
+<p><a href="audience-research.html">Audience workflow</a> · <a href="audience-research.html#data-collection--limits">Data collection, limits &amp; PII</a></p>
 """,
-        "Feature overview for Loopmark Agent — complaints, posting, funnel, and audience research.",
+        "Feature overview for Loopmark Agent: complaints, posting, funnel, and audience research.",
     ),
     "install.html": (
         "Install",
@@ -156,8 +180,8 @@ cp .env.example .env
 loopmark-agent chat</code></pre>
 <h2>Optional integrations</h2>
 <ul>
-  <li>Twitter/X, LinkedIn, Buffer — set credentials in <code>.env</code></li>
-  <li>Local scheduler — <code>python scheduler.py</code> for due posts</li>
+  <li>Twitter/X, LinkedIn, Buffer: set credentials in <code>.env</code></li>
+  <li>Local scheduler: <code>python scheduler.py</code> for due posts</li>
 </ul>
 """,
         "Install Loopmark Agent via pip or from source with Python 3.10+.",
@@ -167,7 +191,7 @@ loopmark-agent chat</code></pre>
         "/audience-research.html",
         """
 <h1>Audience research</h1>
-<p class="lead">Build personas from your website, CRM exports, and saved business profile — no ad-platform APIs required.</p>
+<p class="lead">Build personas from your website, CRM exports, and saved business profile. No ad-platform APIs required.</p>
 <h2>Workflow</h2>
 <ol>
   <li>Save your product, tone, and target audience with the business profile tools</li>
@@ -177,7 +201,53 @@ loopmark-agent chat</code></pre>
 </ol>
 <h2>What is not included</h2>
 <p>Loopmark Agent does not connect to Meta Ads, LinkedIn Campaign Manager, Google Ads, or follower analytics APIs in the OSS edition. Audience research here means website + CRM + AI personas.</p>
-""",
+<h2 id="data-collection--limits">Data collection &amp; limits</h2>
+<p>This is <strong>not</strong> large-scale web scraping. Audience research uses small, user-initiated fetches to help draft marketing personas.</p>
+<h3>What the agent may fetch</h3>
+<ul>
+  <li><strong>Website URL (you provide)</strong>: one HTTP GET of public HTML per analysis. We parse title, meta tags, headings, and body copy. Response size is capped; requests time out after a few seconds.</li>
+  <li><strong>Social profile links on that site</strong>: optional follow-up GET of public profile pages (LinkedIn, Instagram, X, etc.) to read Open Graph / title / description when available. Many platforms return login walls; we mark those as blocked and do not bypass authentication.</li>
+  <li><strong>CRM files (you upload)</strong>: CSV or JSON you export from your own CRM. Nothing is pulled from third-party CRM APIs in the OSS edition.</li>
+  <li><strong>Business profile (you enter)</strong>: product name, tone, audience description, website URL stored locally for reuse.</li>
+</ul>
+<h3>What we do not do</h3>
+<ul>
+  <li>No crawling sitemaps, search results, or competitor databases at scale</li>
+  <li>No ad-platform or social analytics APIs (followers, ad spend, lookalikes)</li>
+  <li>No circumventing rate limits, CAPTCHAs, or login walls</li>
+  <li>No resale or sharing of fetched or imported data</li>
+</ul>
+<h3>Operational limits (self-hosted)</h3>
+<p>Volume is intentionally low (on-demand, per user action). If you deploy for many users or geos, you are responsible for robots.txt, site terms, request politeness, and infrastructure (including proxies) where appropriate.</p>
+<h2>PII &amp; privacy</h2>
+<p>When you self-host Loopmark Agent, <strong>you</strong> are responsible for how personal data is collected, stored, and processed. The OSS agent stores data locally under <code>data/</code> (JSON files) unless you integrate your own backend.</p>
+<h3>Where PII can appear</h3>
+<table>
+  <thead>
+    <tr><th>Feature</th><th>Typical fields</th><th>Storage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>CRM import</td><td>Name, email, company, job title, tags, segment</td><td><code>data/</code> (imported rows / personas)</td></tr>
+    <tr><td>Funnel / leads</td><td>Name, email, company, notes, score</td><td><code>data/leads.json</code></td></tr>
+    <tr><td>Complaints</td><td>Customer name, email, message</td><td><code>data/complaints.json</code></td></tr>
+    <tr><td>Website analysis</td><td>Usually no individual PII; public marketing copy only</td><td>Transient / persona drafts</td></tr>
+    <tr><td>Social public fetch</td><td>Public bio/title text only when pages are accessible</td><td>Enrichment on analysis result</td></tr>
+  </tbody>
+</table>
+<h3>Third parties</h3>
+<ul>
+  <li><strong>OpenAI</strong>: persona and content tools may send website excerpts, CRM summaries, or messages you provide to the model API. Review <a href="https://openai.com/policies" rel="noopener noreferrer">OpenAI’s policies</a> and use enterprise / zero-retention options if your compliance program requires them.</li>
+  <li><strong>Twitter, LinkedIn, Buffer</strong>: only when you configure publishing; not used for audience scraping.</li>
+</ul>
+<h3>Recommendations</h3>
+<ul>
+  <li>Do not commit <code>data/</code>, CRM exports, or <code>.env</code> to git.</li>
+  <li>Import the minimum CRM columns needed (avoid full contact dumps when anonymized segments are enough).</li>
+  <li>Honor GDPR, CCPA, and local rules for consent, retention, and deletion when processing customer or lead data.</li>
+  <li>Redact or delete JSON files when offboarding users or closing a deployment.</li>
+</ul>
+<p>Questions from partners or reviewers? Point them to this page and the <a href="{repo}#data-collection-limits--pii">README section</a>.</p>
+""".format(repo=REPO_URL),
         "Audience research with website analysis, CRM import, and AI personas.",
     ),
     "api.html": (
@@ -193,9 +263,9 @@ print(result.reply)
 print(result.intent)  # posting | complaint | funnel</code></pre>
 <h2>AgentResult</h2>
 <ul>
-  <li><code>reply</code> — assistant text for this turn</li>
-  <li><code>intent</code> — routed agent name</li>
-  <li><code>messages</code> — full LangChain message history for multi-turn chat</li>
+  <li><code>reply</code>: assistant text for this turn</li>
+  <li><code>intent</code>: routed agent name</li>
+  <li><code>messages</code>: full LangChain message history for multi-turn chat</li>
 </ul>
 <h2>CLI equivalent</h2>
 <pre><code>loopmark-agent chat

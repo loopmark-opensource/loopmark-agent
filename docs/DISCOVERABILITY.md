@@ -43,6 +43,10 @@ gh repo edit loopmark-opensource/loopmark-agent \
   --add-topic lead-generation --add-topic audience-research
 ```
 
+Or run the **Sync repo topics** workflow (`.github/workflows/sync-repo-topics.yml`) via Actions → workflow_dispatch. It is idempotent and safe to re-run.
+
+**Secret required:** `REPO_SETTINGS_TOKEN` — a PAT or fine-grained token with **Administration: Read and write** (or classic `repo` scope). `GITHUB_TOKEN` cannot update repository topics or description.
+
 ## PyPI package
 
 The project is packaged as **`loopmark-agent`**:
@@ -97,6 +101,14 @@ Rebuild locally:
 ```bash
 python scripts/build_docs_site.py
 ```
+
+### Enable GitHub Pages (one-time, repo admin)
+
+1. Open [Settings → Pages](https://github.com/loopmark-opensource/loopmark-agent/settings/pages)
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**
+3. Re-run the **Deploy docs to GitHub Pages** workflow (or push to `main`/`dev`)
+
+Until Pages is enabled, the deploy job is skipped with a warning (build still succeeds).
 
 ## Social link previews
 

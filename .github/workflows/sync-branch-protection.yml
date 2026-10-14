@@ -3,8 +3,8 @@ name: Sync branch protection
 on:
   workflow_dispatch:
 
+# Rulesets API requires a repo-admin PAT — not available via GITHUB_TOKEN permissions.
 permissions:
-  administration: write
   contents: read
 
 jobs:
@@ -18,8 +18,12 @@ jobs:
 
       - name: Apply repository ruleset
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RULESET_ADMIN_TOKEN }}
         run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::error::Add repository secret RULESET_ADMIN_TOKEN (PAT with admin:repo) to sync rulesets."
+            exit 1
+          fi
           RULESET_ID=$(gh api repos/${{ github.repository }}/rulesets --jq '.[] | select(.name=="main") | .id')
           if [[ -z "$RULESET_ID" ]]; then
             gh api \

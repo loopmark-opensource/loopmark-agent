@@ -1,0 +1,57 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Search [existing issues](https://github.com/loopmark-opensource/loopmark-agent/issues) first.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong in one or two sentences?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands or chat prompts that trigger the bug.
+      placeholder: |
+        1. pip install -e ".[dev]"
+        2. loopmark-agent chat
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include error messages or relevant log snippets (redact secrets).
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: "Python version, OS, install method (pip / editable / clone)"
+      placeholder: "Python 3.12, macOS, pip install -e ."
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I did not paste API keys or other secrets into this issue
+          required: true
+        - label: I checked CONTRIBUTING.md and existing issues
+          required: false

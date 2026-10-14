@@ -1,0 +1,52 @@
+name: Sync repo topics
+
+on:
+  workflow_dispatch:
+
+# GITHUB_TOKEN cannot update repository topics/description.
+# Add a PAT (or fine-grained token) with Administration: Read and write
+# (or classic `repo` scope) as secret REPO_SETTINGS_TOKEN.
+permissions:
+  contents: read
+
+jobs:
+  sync-topics:
+    name: Apply recommended topics
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply description, homepage, and topics
+        env:
+          GH_TOKEN: ${{ secrets.REPO_SETTINGS_TOKEN }}
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::error::Add repository secret REPO_SETTINGS_TOKEN (PAT with Administration: write, or classic repo scope)."
+            exit 1
+          fi
+
+          DESCRIPTION='Open-source LangGraph AI marketing agent — social content, email campaigns, audience research, lead funnel, auto-posting'
+          HOMEPAGE='https://loopmark-opensource.github.io/loopmark-agent/'
+          TOPICS=(
+            langgraph
+            langchain
+            marketing-automation
+            social-media
+            email-marketing
+            ai-agent
+            open-source
+            python
+            content-marketing
+            lead-generation
+            audience-research
+          )
+
+          ARGS=(--description "$DESCRIPTION" --homepage "$HOMEPAGE")
+          for topic in "${TOPICS[@]}"; do
+            ARGS+=(--add-topic "$topic")
+          done
+
+          gh repo edit "${{ github.repository }}" "${ARGS[@]}"
+          echo "Applied description, homepage, and ${#TOPICS[@]} topics (idempotent)."

@@ -30,7 +30,13 @@ def test_homepage_has_json_ld_and_og_tags() -> None:
     assert '"@type": "SoftwareApplication"' in html
     assert 'property="og:title"' in html
     assert 'property="og:image"' in html
+    assert 'property="og:image:width"' in html
     assert "social-preview.png" in html
+
+
+def test_social_preview_is_valid_png() -> None:
+    data = (SITE_DIR / "social-preview.png").read_bytes()
+    assert data.startswith(b"\x89PNG\r\n\x1a\n"), "site/social-preview.png must be real PNG (not JPEG renamed)"
 
 
 def test_sitemap_lists_core_pages() -> None:
