@@ -1,7 +1,10 @@
 import json
 from datetime import date
 
+import httpx
+
 from config import config
+from tools import publisher_tools
 from tools.publisher_tools import (
     post_to_twitter,
     post_to_linkedin,
@@ -31,6 +34,68 @@ def test_post_to_twitter_too_long(monkeypatch):
 
     result = post_to_twitter.invoke({"content": "x" * 281})
     assert "280 characters" in result
+
+
+def test_oauth1_signature_matches_twitter_reference_example():
+    # Worked example from Twitter's "Creating a signature" docs.
+    params = {
+        "status": "Hello Ladies + Gentlemen, a signed OAuth request!",
+        "include_entities": "true",
+        "oauth_consumer_key": "xvz1evFS4wEEPTGEFPHBog",
+        "oauth_nonce": "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg",
+        "oauth_signature_method": "HMAC-SHA1",
+        "oauth_timestamp": "1318622958",
+        "oauth_token": "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb",
+        "oauth_version": "1.0",
+    }
+    signature = publisher_tools._oauth1_signature(
+        "POST",
+        "https://api.twitter.com/1.1/statuses/update.json",
+        params,
+        "kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw",
+        "LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE",
+    )
+    assert signature == "hCtSmYh+iHYCEqBWrE7C7hYmtUk="
+
+
+def test_post_to_twitter_sends_signed_request(monkeypatch):
+    monkeypatch.setenv("TWITTER_API_KEY", "key")
+    monkeypatch.setenv("TWITTER_API_SECRET", "secret")
+    monkeypatch.setenv("TWITTER_ACCESS_TOKEN", "token")
+    monkeypatch.setenv("TWITTER_ACCESS_SECRET", "token-secret")
+    captured = {}
+
+    def fake_post(url, headers, json, timeout):
+        captured.update(url=url, headers=headers, json=json)
+        return httpx.Response(
+            201, json={"data": {"id": "123", "text": json["text"]}}, request=httpx.Request("POST", url)
+        )
+
+    monkeypatch.setattr(publisher_tools.httpx, "post", fake_post)
+
+    result = post_to_twitter.invoke({"content": "Hello world"})
+    assert "Tweet ID: 123" in result
+    assert captured["url"] == publisher_tools.TWITTER_TWEETS_URL
+    assert captured["json"] == {"text": "Hello world"}
+    auth = captured["headers"]["Authorization"]
+    assert auth.startswith("OAuth ")
+    assert 'oauth_consumer_key="key"' in auth and 'oauth_token="token"' in auth
+    assert "oauth_signature=" in auth
+
+
+def test_post_to_twitter_api_error(monkeypatch):
+    monkeypatch.setenv("TWITTER_API_KEY", "key")
+    monkeypatch.setenv("TWITTER_API_SECRET", "secret")
+    monkeypatch.setenv("TWITTER_ACCESS_TOKEN", "token")
+    monkeypatch.setenv("TWITTER_ACCESS_SECRET", "token-secret")
+    monkeypatch.setattr(
+        publisher_tools.httpx,
+        "post",
+        lambda url, **kw: httpx.Response(401, text="Unauthorized", request=httpx.Request("POST", url)),
+    )
+
+    result = post_to_twitter.invoke({"content": "Hello world"})
+    assert result == "Twitter API error 401: Unauthorized"
 
 
 def test_post_to_linkedin_missing_credentials(monkeypatch):
