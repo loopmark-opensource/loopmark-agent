@@ -2,7 +2,7 @@
 Publisher tools — real automatic posting to social platforms.
 
 Supported channels:
-  - Twitter/X      via Tweepy (OAuth 1.0a)
+  - Twitter/X      via Twitter API v2 (OAuth 1.0a, signed with httpx)
   - LinkedIn       via LinkedIn REST API v2
   - Buffer         via Buffer API v1  (schedules to Twitter, LinkedIn,
                    Instagram, Facebook from one place)
@@ -14,8 +14,14 @@ a clear error rather than crashing the agent.
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 import os
+import secrets
+import time
 from datetime import datetime
+from urllib.parse import quote
 
 import httpx
 from langchain_core.tools import tool
@@ -26,6 +32,43 @@ from storage import get_storage
 
 def _twitter_creds() -> dict | None:
     return get_credentials().twitter()
+
+
+# ─── OAuth 1.0a signing (Twitter/X) ────────────────────────────────────────
+
+TWITTER_TWEETS_URL = "https://api.twitter.com/2/tweets"
+
+
+def _pct(value: str) -> str:
+    """RFC 3986 percent-encoding as required by OAuth 1.0a."""
+    return quote(value, safe="")
+
+
+def _oauth1_signature(
+    method: str, url: str, params: dict[str, str], consumer_secret: str, token_secret: str
+) -> str:
+    """HMAC-SHA1 signature over the OAuth 1.0a signature base string."""
+    param_str = "&".join(f"{_pct(k)}={_pct(v)}" for k, v in sorted(params.items()))
+    base = "&".join([method.upper(), _pct(url), _pct(param_str)])
+    key = f"{_pct(consumer_secret)}&{_pct(token_secret)}"
+    digest = hmac.new(key.encode(), base.encode(), hashlib.sha1).digest()
+    return base64.b64encode(digest).decode()
+
+
+def _oauth1_header(method: str, url: str, creds: dict) -> str:
+    """Authorization header for a request whose body is JSON (not signed)."""
+    oauth = {
+        "oauth_consumer_key": creds["TWITTER_API_KEY"],
+        "oauth_nonce": secrets.token_hex(16),
+        "oauth_signature_method": "HMAC-SHA1",
+        "oauth_timestamp": str(int(time.time())),
+        "oauth_token": creds["TWITTER_ACCESS_TOKEN"],
+        "oauth_version": "1.0",
+    }
+    oauth["oauth_signature"] = _oauth1_signature(
+        method, url, oauth, creds["TWITTER_API_SECRET"], creds["TWITTER_ACCESS_SECRET"]
+    )
+    return "OAuth " + ", ".join(f'{_pct(k)}="{_pct(v)}"' for k, v in sorted(oauth.items()))
 
 
 def _linkedin_creds() -> dict | None:
@@ -90,16 +133,14 @@ def post_to_twitter(content: str, post_id: str = "") -> str:
         return f"Tweet exceeds 280 characters ({len(content)}). Please shorten it."
 
     try:
-        import tweepy  # type: ignore
-
-        client = tweepy.Client(
-            consumer_key=creds["TWITTER_API_KEY"],
-            consumer_secret=creds["TWITTER_API_SECRET"],
-            access_token=creds["TWITTER_ACCESS_TOKEN"],
-            access_token_secret=creds["TWITTER_ACCESS_SECRET"],
+        resp = httpx.post(
+            TWITTER_TWEETS_URL,
+            headers={"Authorization": _oauth1_header("POST", TWITTER_TWEETS_URL, creds)},
+            json={"text": content},
+            timeout=15,
         )
-        response = client.create_tweet(text=content)
-        tweet_id = response.data["id"]
+        resp.raise_for_status()
+        tweet_id = resp.json()["data"]["id"]
         tweet_url = f"https://twitter.com/i/web/status/{tweet_id}"
 
         if post_id:
@@ -107,8 +148,11 @@ def post_to_twitter(content: str, post_id: str = "") -> str:
 
         return f"Tweet published successfully!\nURL: {tweet_url}\nTweet ID: {tweet_id}"
 
-    except ImportError:
-        return "tweepy not installed. Run: pip install tweepy"
+    except httpx.HTTPStatusError as e:
+        err = f"Twitter API error {e.response.status_code}: {e.response.text}"
+        if post_id:
+            _mark_published(post_id, error=err)
+        return err
     except Exception as e:
         if post_id:
             _mark_published(post_id, error=str(e))
