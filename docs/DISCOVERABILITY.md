@@ -85,7 +85,7 @@ Target these phrases in docs, issues, and release notes:
 | **PyPI** | Package is buildable via `pyproject.toml`; publish with the `Publish to PyPI` workflow on release ([#26](https://github.com/loopmark-opensource/loopmark-agent/issues/26)) |
 | **GitHub Pages** | Static docs at `/site` — see [site index](https://loopmark-opensource.github.io/loopmark-agent/) ([#27](https://github.com/loopmark-opensource/loopmark-agent/issues/27)) |
 | **Product Hunt / Hacker News** | Launch when web UI ships |
-| **Dev.to / Medium** | Tutorial: "Build a marketing agent with LangGraph" |
+| **Dev.to / Medium** | Tutorial: "Build a marketing agent with LangGraph". Draft in [`medium-build-marketing-agent-langgraph.md`](medium-build-marketing-agent-langgraph.md) ([#31](https://github.com/loopmark-opensource/loopmark-agent/issues/31)) |
 
 ## Docs site (GitHub Pages)
 
@@ -112,7 +112,7 @@ Until Pages is enabled, the deploy job is skipped with a warning (build still su
 
 ## Social link previews
 
-`docs/social-preview.png` and `site/social-preview.png` (1280×640) are included in the repo ([#28](https://github.com/loopmark-opensource/loopmark-agent/issues/28)).
+`docs/social-preview.png` and `site/social-preview.png` (1280×720) are included in the repo ([#28](https://github.com/loopmark-opensource/loopmark-agent/issues/28)).
 
 Upload the same image in GitHub **Settings → General → Social preview** so repository links show the branded card on Twitter/LinkedIn.
 
