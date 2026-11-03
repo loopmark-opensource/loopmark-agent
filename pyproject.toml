@@ -59,6 +59,11 @@ dev = [
     "pip-audit>=2.7.0",
     "build>=1.2.0",
     "twine>=5.0.0",
+    "fastapi>=0.115.0",
+]
+api = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
 ]
 
 [project.urls]
@@ -83,5 +88,6 @@ include = [
     "core*",
     "credentials*",
     "storage*",
+    "api*",
 ]
 exclude = ["tests*", "data*", "docs*"]
