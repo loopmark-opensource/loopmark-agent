@@ -198,6 +198,7 @@ export OPENAI_API_KEY=sk-your-key
 loopmark-agent chat
 loopmark-agent stats</code></pre>
 <p>Data files are written to <code>./data</code> in your working directory. Override with <code>DATA_DIR</code>.</p>
+<p class="site-banner">If the package is not on PyPI yet, use <code>pip install git+https://github.com/loopmark-opensource/loopmark-agent.git</code> or follow the <strong>From source</strong> instructions below.</p>
 <h2>From source</h2>
 <pre><code>git clone https://github.com/loopmark-opensource/loopmark-agent.git
 cd loopmark-agent
@@ -382,7 +383,7 @@ def write_search_index(pages: dict[str, tuple[str, str, str, str | None]]) -> No
         for filename, (title, _path, body, _desc) in pages.items()
     ]
     (SITE_DIR / "search-index.json").write_text(
-        json.dumps(entries, ensure_ascii=False, indent=1), encoding="utf-8"
+        json.dumps(entries, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n"
     )
 
 
@@ -396,7 +397,7 @@ def write_sitemap() -> None:
 {urls}
 </urlset>
 """
-    (SITE_DIR / "sitemap.xml").write_text(content, encoding="utf-8")
+    (SITE_DIR / "sitemap.xml").write_text(content, encoding="utf-8", newline="\n")
 
 
 def write_robots() -> None:
@@ -405,7 +406,7 @@ Allow: /
 
 Sitemap: {SITE_URL}/sitemap.xml
 """
-    (SITE_DIR / "robots.txt").write_text(content, encoding="utf-8")
+    (SITE_DIR / "robots.txt").write_text(content, encoding="utf-8", newline="\n")
 
 
 def main() -> None:
@@ -414,7 +415,7 @@ def main() -> None:
     title, path, body, desc = pages["api.html"]
     pages["api.html"] = (title, path, body.replace("{api_reference}", api_reference()), desc)
     for filename, (title, path, body, desc) in pages.items():
-        (SITE_DIR / filename).write_text(page(title, path, body, desc), encoding="utf-8")
+        (SITE_DIR / filename).write_text(page(title, path, body, desc), encoding="utf-8", newline="\n")
     write_search_index(pages)
     write_sitemap()
     write_robots()
