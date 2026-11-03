@@ -3,6 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional
 from datetime import datetime
+from utils.clock import utcnow
 from pydantic import BaseModel, Field
 
 
@@ -26,7 +27,7 @@ class ComplaintCategory(str, Enum):
 
 
 class Complaint(BaseModel):
-    id: str = Field(default_factory=lambda: f"CMP-{int(datetime.utcnow().timestamp())}")
+    id: str = Field(default_factory=lambda: f"CMP-{int(utcnow().timestamp())}")
     customer_name: str = ""
     customer_email: str = ""
     message: str
@@ -34,7 +35,7 @@ class Complaint(BaseModel):
     severity: ComplaintSeverity = ComplaintSeverity.MEDIUM
     resolved: bool = False
     response: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utcnow)
 
 
 class ComplaintAnalysis(BaseModel):
@@ -109,11 +110,11 @@ class BusinessProfile(BaseModel):
     brand_tone: str = ""
     website_url: str = ""
     default_cta: str = ""
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
 
 
 class AudiencePersona(BaseModel):
-    id: str = Field(default_factory=lambda: f"PERSONA-{int(datetime.utcnow().timestamp())}")
+    id: str = Field(default_factory=lambda: f"PERSONA-{int(utcnow().timestamp())}")
     name: str
     demographics: str = ""
     pain_points: str = ""
@@ -121,7 +122,7 @@ class AudiencePersona(BaseModel):
     preferred_platforms: list[str] = Field(default_factory=list)
     messaging_angles: list[str] = Field(default_factory=list)
     source: str = ""  # e.g. website, crm, manual
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utcnow)
 
 
 class CRMContact(BaseModel):
@@ -150,7 +151,7 @@ class FunnelStage(str, Enum):
 
 
 class Lead(BaseModel):
-    id: str = Field(default_factory=lambda: f"LEAD-{int(datetime.utcnow().timestamp())}")
+    id: str = Field(default_factory=lambda: f"LEAD-{int(utcnow().timestamp())}")
     name: str
     email: str
     company: str = ""
@@ -158,7 +159,7 @@ class Lead(BaseModel):
     score: int = Field(default=0, ge=0, le=100)
     source: str = ""
     notes: str = ""
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utcnow)
     last_contacted: Optional[datetime] = None
 
 

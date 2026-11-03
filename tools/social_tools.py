@@ -5,6 +5,7 @@ Tools for the Content / Posting Agent.
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from utils.clock import utcnow
 from typing import Optional
 
 from langchain_core.tools import tool
@@ -101,14 +102,14 @@ def save_post(
         Confirmation with post ID.
     """
     post = {
-        "id": f"POST-{int(datetime.utcnow().timestamp())}",
+        "id": f"POST-{int(utcnow().timestamp())}",
         "platform": platform,
         "content": content,
         "hashtags": [h.strip() for h in hashtags.split(",") if h.strip()],
         "character_count": len(content),
-        "scheduled_date": scheduled_date or datetime.utcnow().date().isoformat(),
+        "scheduled_date": scheduled_date or utcnow().date().isoformat(),
         "status": "scheduled" if scheduled_date else "draft",
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": utcnow().isoformat(),
     }
     posts = _load_posts()
     posts.append(post)
@@ -171,7 +172,7 @@ def generate_content_calendar(
     platform_list = [p.strip().lower() for p in platforms.split(",") if p.strip()]
     weeks = max(1, min(4, weeks))
 
-    today = datetime.utcnow().date()
+    today = utcnow().date()
     calendar: list[str] = ["Content Calendar", "=" * 60]
 
     posting_days = [0, 2, 4]  # Mon, Wed, Fri

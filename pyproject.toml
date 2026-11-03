@@ -86,6 +86,7 @@ include = [
     "models*",
     "prompts*",
     "core*",
+    "utils*",
     "credentials*",
     "storage*",
     "api*",

@@ -4,7 +4,7 @@ Tools for the Funnel Agent.
 
 from __future__ import annotations
 
-from datetime import datetime
+from utils.clock import utcnow
 from typing import Optional
 
 from langchain_core.tools import tool
@@ -93,9 +93,9 @@ def update_lead_stage(lead_id: str, new_stage: str, notes: str = "") -> str:
         if lead["id"] == lead_id:
             old_stage = lead["stage"]
             lead["stage"] = new_stage.lower()
-            lead["last_contacted"] = datetime.utcnow().isoformat()
+            lead["last_contacted"] = utcnow().isoformat()
             if notes:
-                lead["notes"] = (lead.get("notes", "") + f"\n[{datetime.utcnow().date()}] {notes}").strip()
+                lead["notes"] = (lead.get("notes", "") + f"\n[{utcnow().date()}] {notes}").strip()
             _save_leads(leads)
             return f"Lead {lead_id} moved from '{old_stage}' → '{new_stage}'."
     return f"Lead {lead_id} not found."
