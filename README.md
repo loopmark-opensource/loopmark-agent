@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.png" alt="Loopmark logo" width="96" height="96"></p>
+
 # Loopmark Agent — Open-Source AI Marketing Assistant
 
 > **LangGraph marketing agent** for social media content, email campaigns, audience research, lead funnel management, and auto-posting to Twitter, LinkedIn, and Buffer. Free MIT-licensed Python CLI — bring your own OpenAI key.

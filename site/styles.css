@@ -84,7 +84,7 @@ header {
 }
 
 .nav {
-  max-width: var(--max);
+  max-width: 1140px;
   margin: 0 auto;
   padding: 1rem 1.25rem;
   display: flex;
@@ -95,9 +95,18 @@ header {
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-weight: 700;
   color: var(--text);
   letter-spacing: 0.02em;
+}
+
+.brand img {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
 }
 
 .nav-links {
@@ -197,6 +206,13 @@ code {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.1rem 0.35rem;
+}
+
+pre code {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 
 h2 {
