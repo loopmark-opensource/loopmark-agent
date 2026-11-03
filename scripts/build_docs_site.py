@@ -68,7 +68,7 @@ JSON_LD = f"""{{
 NAV = """
 <header>
   <div class="nav">
-    <a class="brand" href="index.html">Loopmark Agent</a>
+    <a class="brand" href="index.html"><img src="logo.png" alt="" width="28" height="28">Loopmark Agent</a>
     <nav class="nav-links" aria-label="Primary">
       <a href="features.html">Features</a>
       <a href="install.html">Install</a>
@@ -122,6 +122,8 @@ def page(title: str, path: str, body: str, description: str | None = None) -> st
 <meta name="twitter:image" content="{OG_IMAGE}">
 <meta name="twitter:image:alt" content="{OG_IMAGE_ALT}">
 <meta name="theme-color" content="{THEME_COLOR}">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>{THEME_INIT}</script>
 <link rel="stylesheet" href="{asset_href("styles.css")}">
 <script src="{asset_href("site.js")}" defer></script>

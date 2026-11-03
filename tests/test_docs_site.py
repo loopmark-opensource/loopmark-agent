@@ -30,6 +30,9 @@ def test_docs_pages_exist() -> None:
         "site.js",
         "search-index.json",
         "social-preview.png",
+        "logo.png",
+        "favicon.png",
+        "apple-touch-icon.png",
     ):
         assert (SITE_DIR / name).exists(), f"missing site/{name}"
 
@@ -105,3 +108,12 @@ def test_built_site_is_up_to_date() -> None:
     title, path, body, desc = build.PAGES["api.html"]
     expected = build.page(title, path, body.replace("{api_reference}", build.api_reference()), desc)
     assert (SITE_DIR / "api.html").read_text(encoding="utf-8") == expected
+
+
+def test_pages_use_colored_logo_and_favicon() -> None:
+    for name in ("logo.png", "favicon.png", "apple-touch-icon.png"):
+        assert (SITE_DIR / name).read_bytes().startswith(b"\x89PNG\r\n\x1a\n"), name
+    for page in SITE_DIR.glob("*.html"):
+        html = page.read_text(encoding="utf-8")
+        assert 'rel="icon" type="image/png" href="favicon.png"' in html, page.name
+        assert '<img src="logo.png"' in html, page.name
