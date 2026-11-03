@@ -33,6 +33,6 @@ jobs:
           else
             gh api \
               --method PUT \
-              repos/${{ github.repository }}/rulesets/${RULESET_ID} \
+              "repos/${{ github.repository }}/rulesets/${RULESET_ID}" \
               --input .github/rulesets/main.json
           fi
