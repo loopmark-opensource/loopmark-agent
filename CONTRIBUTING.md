@@ -67,12 +67,12 @@ Rules:
 
 ## Pull request expectations
 
-1. Get assigned to the issue (see above), then fork and branch from `dev` (`git checkout -b fix/short-description`).
+1. Get assigned to the issue (see above), then fork and branch from `main` or `dev` (`git checkout -b fix/short-description`). Both are kept in sync automatically.
 2. Keep changes focused — one concern per PR when practical.
 3. Match existing style (type hints, small tools, no unrelated refactors).
 4. Add or update tests for behavior changes.
 5. Do not commit `.env`, credentials, or `data/` (may contain PII).
-6. Open the PR against `dev` with a short summary and test plan.
+6. Open the PR against the branch you started from (`main` or `dev`) with a short summary and test plan.
 
 ## OSS vs paid boundary
 
