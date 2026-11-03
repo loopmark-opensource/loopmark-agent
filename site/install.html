@@ -20,7 +20,9 @@
 <meta name="twitter:image" content="https://loopmark-opensource.github.io/loopmark-agent/social-preview.png">
 <meta name="twitter:image:alt" content="Loopmark Agent, open-source LangGraph marketing assistant">
 <meta name="theme-color" content="#009E96">
-<link rel="stylesheet" href="styles.css?v=86dd4c33f5">
+<script>try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="styles.css?v=1d8f688921">
+<script src="site.js?v=3ec4536c32" defer></script>
 <script type="application/ld+json">{
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
@@ -52,6 +54,14 @@
       <a href="https://github.com/loopmark-opensource/loopmark-agent">GitHub</a>
       <a class="nav-cta" href="https://main.d3b5sf354a54dh.amplifyapp.com/">Loopmark website</a>
     </nav>
+    <div class="nav-tools">
+      <div class="search" role="search">
+        <label class="visually-hidden" for="site-search">Search docs</label>
+        <input id="site-search" type="search" placeholder="Search docs" autocomplete="off" aria-controls="search-results">
+        <ul id="search-results" class="search-results" hidden></ul>
+      </div>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark theme">&#9790;</button>
+    </div>
   </div>
 </header>
 

@@ -1,0 +1,28 @@
+name: Docs link check
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  links:
+    name: Check docs links (internal + external)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build static docs
+        run: python scripts/build_docs_site.py
+
+      - name: Check links
+        run: python scripts/check_links.py --external
