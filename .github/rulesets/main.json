@@ -4,7 +4,9 @@
   "enforcement": "active",
   "conditions": {
     "ref_name": {
-      "include": ["refs/heads/main"],
+      "include": [
+        "refs/heads/main"
+      ],
       "exclude": []
     }
   },
@@ -31,12 +33,27 @@
         "strict_required_status_checks_policy": true,
         "do_not_enforce_on_create": false,
         "required_status_checks": [
-          { "context": "Required checks" },
-          { "context": "test (3.10)" },
-          { "context": "test (3.11)" },
-          { "context": "test (3.12)" },
-          { "context": "Security scan" },
-          { "context": "Dependency vulnerability scan" }
+          {
+            "context": "Required checks"
+          },
+          {
+            "context": "test (3.10)"
+          },
+          {
+            "context": "test (3.11)"
+          },
+          {
+            "context": "test (3.12)"
+          },
+          {
+            "context": "Security scan"
+          },
+          {
+            "context": "Dependency vulnerability scan"
+          },
+          {
+            "context": "Issue assignment"
+          }
         ]
       }
     }

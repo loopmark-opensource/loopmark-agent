@@ -3,7 +3,7 @@ name: CI
 on:
   push:
   pull_request:
-    branches: [main, master]
+    branches: [main, master, dev]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -140,10 +140,21 @@ jobs:
           OPENAI_API_KEY=test-key-for-ci /tmp/pkg-venv/bin/loopmark-agent stats
           OPENAI_API_KEY=test-key-for-ci /tmp/pkg-venv/bin/python -I -c "from agents.graph import get_marketing_graph; get_marketing_graph()"
 
+  workflow-lint:
+    name: Workflow lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint GitHub Actions workflows
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -color
+
   required-checks:
     name: Required checks
     runs-on: ubuntu-latest
-    needs: [test, security, vulnerability, package]
+    needs: [test, security, vulnerability, package, workflow-lint]
     if: always()
 
     steps:
@@ -153,11 +164,13 @@ jobs:
           echo "security: ${{ needs.security.result }}"
           echo "vulnerability: ${{ needs.vulnerability.result }}"
           echo "package: ${{ needs.package.result }}"
+          echo "workflow-lint: ${{ needs.workflow-lint.result }}"
 
           if [[ "${{ needs.test.result }}" != "success" ||
                 "${{ needs.security.result }}" != "success" ||
                 "${{ needs.vulnerability.result }}" != "success" ||
-                "${{ needs.package.result }}" != "success" ]]; then
+                "${{ needs.package.result }}" != "success" ||
+                "${{ needs.workflow-lint.result }}" != "success" ]]; then
             echo "One or more required CI checks failed."
             exit 1
           fi
