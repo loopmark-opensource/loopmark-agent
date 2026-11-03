@@ -12,7 +12,7 @@
  {
   "title": "Install",
   "url": "install.html",
-  "text": "Installation Python 3.10+ and an OpenAI API key. Optional social credentials for live posting. pip install pip install loopmark-agent export OPENAI_API_KEY=sk-your-key loopmark-agent chat loopmark-agent stats Data files are written to ./data in your working directory. Override with DATA_DIR . From source git clone https://github.com/loopmark-opensource/loopmark-agent.git cd loopmark-agent python3 -m venv .venv && source .venv/bin/activate pip install -e . cp .env.example .env loopmark-agent chat Optional integrations Twitter/X, LinkedIn, Buffer: set credentials in .env Local scheduler: python scheduler.py for due posts"
+  "text": "Installation Python 3.10+ and an OpenAI API key. Optional social credentials for live posting. pip install pip install loopmark-agent export OPENAI_API_KEY=sk-your-key loopmark-agent chat loopmark-agent stats Data files are written to ./data in your working directory. Override with DATA_DIR . If the package is not on PyPI yet, use pip install git+https://github.com/loopmark-opensource/loopmark-agent.git or follow the From source instructions below. From source git clone https://github.com/loopmark-opensource/loopmark-agent.git cd loopmark-agent python3 -m venv .venv && source .venv/bin/activate pip install -e . cp .env.example .env loopmark-agent chat Optional integrations Twitter/X, LinkedIn, Buffer: set credentials in .env Local scheduler: python scheduler.py for due posts"
  },
  {
   "title": "Audience research",
