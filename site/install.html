@@ -60,12 +60,15 @@
 <h1>Installation</h1>
 <p class="lead">Python 3.10+ and an OpenAI API key. Optional social credentials for live posting.</p>
 <h2>pip install</h2>
+<p><strong>Before installing:</strong> if the package is not on PyPI yet, use the <a href="#from-source">source installation below</a> or install directly from GitHub:</p>
+<pre><code>pip install git+https://github.com/loopmark-opensource/loopmark-agent.git</code></pre>
+<!-- Remove this temporary fallback note once the first PyPI release is available. -->
 <pre><code>pip install loopmark-agent
 export OPENAI_API_KEY=sk-your-key
 loopmark-agent chat
 loopmark-agent stats</code></pre>
 <p>Data files are written to <code>./data</code> in your working directory. Override with <code>DATA_DIR</code>.</p>
-<h2>From source</h2>
+<h2 id="from-source">From source</h2>
 <pre><code>git clone https://github.com/loopmark-opensource/loopmark-agent.git
 cd loopmark-agent
 python3 -m venv .venv && source .venv/bin/activate
