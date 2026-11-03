@@ -9,7 +9,7 @@ import io
 import json
 import re
 from collections import Counter, defaultdict
-from datetime import datetime
+from utils.clock import utcnow
 from html import unescape
 from urllib.parse import urlparse
 
@@ -258,7 +258,7 @@ def save_business_profile(
         brand_tone=brand_tone,
         website_url=website_url,
         default_cta=default_cta,
-        updated_at=datetime.utcnow(),
+        updated_at=utcnow(),
     )
     get_storage().save_business_profile(profile.model_dump())
     return (
@@ -345,7 +345,7 @@ def analyze_website_for_audience(url: str) -> str:
 
     existing = get_storage().load_business_profile() or {}
     if not existing.get("website_url"):
-        existing.update({"website_url": fetch_url, "updated_at": datetime.utcnow().isoformat()})
+        existing.update({"website_url": fetch_url, "updated_at": utcnow().isoformat()})
         if title and not existing.get("product_name"):
             existing["product_name"] = title.split("|")[0].split("-")[0].strip()
         if description and not existing.get("description"):

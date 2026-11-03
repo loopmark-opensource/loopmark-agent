@@ -8,6 +8,7 @@ plain-text conversion, and an email campaign library.
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from utils.clock import utcnow
 
 from langchain_core.tools import tool
 
@@ -104,7 +105,7 @@ def save_email_campaign(
         Confirmation with the campaign ID.
     """
     campaign = {
-        "id": f"EMAIL-{int(datetime.utcnow().timestamp())}",
+        "id": f"EMAIL-{int(utcnow().timestamp())}",
         "campaign_name": campaign_name,
         "subject_line": subject_line,
         "preheader": preheader,
@@ -115,7 +116,7 @@ def save_email_campaign(
         "character_count": len(body),
         "scheduled_date": scheduled_date or "",
         "status": "scheduled" if scheduled_date else "draft",
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": utcnow().isoformat(),
     }
     emails = _load_emails()
     emails.append(campaign)

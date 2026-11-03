@@ -21,6 +21,7 @@ import os
 import secrets
 import time
 from datetime import datetime
+from utils.clock import utcnow
 from urllib.parse import quote
 
 import httpx
@@ -94,7 +95,7 @@ def _mark_published(post_id: str, platform_post_id: str = "", error: str = "") -
     for p in posts:
         if p["id"] == post_id:
             p["status"] = "failed" if error else "published"
-            p["published_at"] = datetime.utcnow().isoformat()
+            p["published_at"] = utcnow().isoformat()
             if platform_post_id:
                 p["platform_post_id"] = platform_post_id
             if error:
@@ -365,7 +366,7 @@ def publish_scheduled_posts(dry_run: bool = False) -> str:
         A summary of posts published (or that would be published in dry-run mode).
     """
     posts = _load_posts()
-    today = datetime.utcnow().date()
+    today = utcnow().date()
 
     due = [
         p for p in posts

@@ -22,6 +22,7 @@ import os
 import time
 import signal
 from datetime import datetime
+from utils.clock import utcnow
 
 import typer
 from rich.console import Console
@@ -69,7 +70,7 @@ def _integration_status() -> str:
 
 def _queue_summary() -> str:
     posts = get_storage().load_posts()
-    today = datetime.utcnow().date()
+    today = utcnow().date()
     scheduled = [p for p in posts if p.get("status") == "scheduled"]
     due = [
         p for p in scheduled
@@ -80,7 +81,7 @@ def _queue_summary() -> str:
 
 
 def _run_once(dry_run: bool = False) -> None:
-    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    now = utcnow().strftime("%Y-%m-%d %H:%M UTC")
     console.print(f"\n[dim]Checking queue at {now}...[/dim]")
     console.print(f"[dim]{_queue_summary()} · {_integration_status()}[/dim]")
     try:

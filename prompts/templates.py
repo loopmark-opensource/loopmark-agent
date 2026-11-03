@@ -128,15 +128,15 @@ Output ONLY the single word label, nothing else.
 
 
 def get_complaints_prompt() -> ChatPromptTemplate:
-    from datetime import datetime
+    from utils.clock import utcnow
     return ChatPromptTemplate.from_messages([
         ("system", COMPLAINTS_SYSTEM),
         MessagesPlaceholder("messages"),
-    ]).partial(date=datetime.utcnow().strftime("%Y-%m-%d"))
+    ]).partial(date=utcnow().strftime("%Y-%m-%d"))
 
 
 def get_posting_prompt() -> ChatPromptTemplate:
-    from datetime import datetime
+    from utils.clock import utcnow
 
     from prompts.business_context import format_business_context
 
@@ -144,13 +144,13 @@ def get_posting_prompt() -> ChatPromptTemplate:
         ("system", POSTING_SYSTEM),
         MessagesPlaceholder("messages"),
     ]).partial(
-        date=datetime.utcnow().strftime("%Y-%m-%d"),
+        date=utcnow().strftime("%Y-%m-%d"),
         business_context=format_business_context(),
     )
 
 
 def get_funnel_prompt() -> ChatPromptTemplate:
-    from datetime import datetime
+    from utils.clock import utcnow
 
     from prompts.business_context import format_business_context
 
@@ -158,7 +158,7 @@ def get_funnel_prompt() -> ChatPromptTemplate:
         ("system", FUNNEL_SYSTEM),
         MessagesPlaceholder("messages"),
     ]).partial(
-        date=datetime.utcnow().strftime("%Y-%m-%d"),
+        date=utcnow().strftime("%Y-%m-%d"),
         business_context=format_business_context(),
     )
 
