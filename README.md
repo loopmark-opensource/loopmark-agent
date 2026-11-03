@@ -279,6 +279,26 @@ python3 scheduler.py --dry-run
 0 * * * * cd /path/to/marketing-agent && .venv/bin/python3 scheduler.py --once
 ```
 
+### REST API (optional)
+
+A FastAPI wrapper exposes the profile, personas, website analysis, CRM import, and chat over HTTP.
+
+```bash
+pip install "loopmark-agent[api]"     # or: pip install -e ".[api]"
+loopmark-agent serve                  # http://127.0.0.1:8000, OpenAPI docs at /docs
+```
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/health` | Liveness check (no auth) |
+| GET / PUT | `/profile` | Read or save the business profile |
+| GET / POST | `/personas` | List or save audience personas |
+| POST | `/analyze/website` | Public website URL to persona draft |
+| POST | `/crm/import` | CSV or JSON segment import |
+| POST | `/chat` | One agent turn: `{"message": "...", "history": [...]}` |
+
+Set `LOOPMARK_API_KEY` to require an `X-API-Key` header on every endpoint except `/health`. `serve` refuses to bind beyond localhost without it. `/analyze/website` rejects URLs that resolve to private, loopback, or link-local addresses.
+
 ---
 
 ## Example prompts
@@ -578,9 +598,9 @@ Lead score bands: 0–30 cold · 31–60 warm · 61–80 hot · 81–100 sales-r
 
 Never expose full API keys to the frontend — store credentials server-side only.
 
-### Backend API (to be built)
+### Backend API (hosted target)
 
-The following endpoints do not exist yet. Map them to existing tools in `tools/` and the agent in `agents/graph.py`.
+A first self-hosted subset ships in `api/` (see [REST API](#rest-api-optional)). The endpoints below are the fuller hosted target; map them to existing tools in `tools/` and the agent in `agents/graph.py`.
 
 #### Chat
 
@@ -671,9 +691,9 @@ GET  /api/scheduler/status
 
 | Exists today | Needs building |
 |---|---|
-| LangGraph agent (`agents/graph.py`) | REST / WebSocket API |
+| LangGraph agent (`agents/graph.py`) | WebSocket / streaming API |
 | JSON persistence (`data/*.json`) | CRUD endpoints |
-| CLI (`main.py`) | `POST /api/chat` wrapper |
+| CLI (`main.py`), REST API (`api/`) | Chat sessions, auth per user |
 | Scheduler (`scheduler.py`) | Background job + API trigger |
 | Publisher tools (Twitter, LinkedIn, Buffer) | Service layer calling same tools |
 | Pydantic schemas (`models/schemas.py`) | API request/response models |
