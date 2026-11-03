@@ -77,3 +77,7 @@ Please search existing issues first.
 ## Discoverability
 
 Ideas for SEO, GitHub topics, and external listings live in [docs/DISCOVERABILITY.md](docs/DISCOVERABILITY.md).
+
+## Releasing
+
+Maintainers: PyPI setup and the release checklist are in [docs/RELEASING.md](docs/RELEASING.md).

@@ -56,7 +56,7 @@ pip install loopmark-agent
 loopmark-agent chat
 ```
 
-Console script and dependencies are declared in `pyproject.toml`. Publishing uses GitHub Actions (`.github/workflows/publish-pypi.yml`) with [Trusted Publishing](https://docs.pypi.org/trusted-publishers/) on GitHub Release — configure the `pypi` environment and PyPI trusted publisher for this repo once.
+Console script and dependencies are declared in `pyproject.toml`. Publishing uses GitHub Actions (`.github/workflows/publish-pypi.yml`) with [Trusted Publishing](https://docs.pypi.org/trusted-publishers/) on GitHub Release. One-time setup and the release checklist: [RELEASING.md](RELEASING.md).
 
 ## README & metadata (done in repo)
 
