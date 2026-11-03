@@ -1,0 +1,78 @@
+name: Issue assignment commands
+
+# Contributors claim an issue by commenting `/assign` and release it with `/unassign`.
+# PRs from non-maintainers must close an issue assigned to their author
+# (enforced by pr-assignment-check.yml).
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+
+jobs:
+  assign:
+    name: Handle /assign and /unassign
+    if: >-
+      !github.event.issue.pull_request &&
+      github.event.issue.state == 'open' &&
+      (startsWith(github.event.comment.body, '/assign') || startsWith(github.event.comment.body, '/unassign'))
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Assign or unassign the commenter
+        uses: actions/github-script@v7
+        env:
+          MAX_OPEN_ASSIGNMENTS: "2"
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue = context.payload.issue;
+            const user = context.payload.comment.user.login;
+            const command = context.payload.comment.body.trim().split(/\s+/)[0];
+            const assignees = issue.assignees.map((a) => a.login);
+            const reply = (body) =>
+              github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body });
+
+            if (command === "/unassign") {
+              if (!assignees.includes(user)) return reply(`@${user} you are not assigned to this issue.`);
+              await github.rest.issues.removeAssignees({ owner, repo, issue_number: issue.number, assignees: [user] });
+              return reply(`@${user} unassigned. This issue is open for someone else to \`/assign\`.`);
+            }
+            if (command !== "/assign") return;
+
+            if (assignees.includes(user)) return reply(`@${user} you are already assigned to this issue.`);
+            if (assignees.length) {
+              return reply(
+                `@${user} this issue is already assigned to ${assignees.map((a) => "@" + a).join(", ")}. ` +
+                  "Please pick another unassigned issue, or ask here if it looks abandoned."
+              );
+            }
+
+            const maintainer = ["OWNER", "MEMBER", "COLLABORATOR"].includes(
+              context.payload.comment.author_association
+            );
+            const max = Number(process.env.MAX_OPEN_ASSIGNMENTS);
+            if (!maintainer) {
+              const { data } = await github.rest.search.issuesAndPullRequests({
+                q: `repo:${owner}/${repo} is:issue is:open assignee:${user}`,
+              });
+              if (data.total_count >= max) {
+                return reply(
+                  `@${user} you already have ${data.total_count} open assigned issue(s) (limit ${max}). ` +
+                    "Finish or `/unassign` one first."
+                );
+              }
+            }
+
+            const { data: updated } = await github.rest.issues.addAssignees({
+              owner, repo, issue_number: issue.number, assignees: [user],
+            });
+            if (!updated.assignees.some((a) => a.login === user)) {
+              return reply(`@${user} GitHub would not assign you automatically; a maintainer will assign you shortly.`);
+            }
+            return reply(
+              `@${user} assigned. Link your PR with \`Closes #${issue.number}\` in its description. ` +
+                "If there is no PR activity within 14 days, maintainers may unassign so someone else can pick it up."
+            );

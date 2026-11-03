@@ -50,9 +50,24 @@ Rebuild the docs site after editing `scripts/build_docs_site.py`:
 python scripts/build_docs_site.py
 ```
 
+## Claim an issue before you start
+
+To avoid two people solving the same thing, **every task must be assigned before you work on it**.
+
+1. Find an open issue with no assignee (`good first issue` is a good start).
+2. Comment `/assign` on it. A bot assigns you, or tells you who already has it.
+3. Open your PR with `Closes #<number>` in the description.
+
+Rules:
+
+- One person per issue; first `/assign` wins. Ask on the issue if it looks abandoned.
+- Up to 2 open assigned issues per contributor. Comment `/unassign` to release one.
+- If there is no PR activity for 14 days, maintainers may unassign you so someone else can pick it up.
+- PRs from non-maintainers fail the **Issue assignment** check unless they close an issue assigned to their author. For a fix with no issue yet, open the issue first.
+
 ## Pull request expectations
 
-1. Fork and branch from `dev` (`git checkout -b fix/short-description`).
+1. Get assigned to the issue (see above), then fork and branch from `dev` (`git checkout -b fix/short-description`).
 2. Keep changes focused — one concern per PR when practical.
 3. Match existing style (type hints, small tools, no unrelated refactors).
 4. Add or update tests for behavior changes.

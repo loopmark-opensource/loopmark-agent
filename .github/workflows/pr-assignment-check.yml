@@ -1,0 +1,88 @@
+name: PR assignment check
+
+# Runs on pull_request_target so it can comment on fork PRs. It never checks out
+# or runs PR code: it only reads the PR description and linked issue assignees.
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  issues: read
+  pull-requests: write
+
+jobs:
+  check:
+    name: Issue assignment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require a linked issue assigned to the PR author
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+            const author = pr.user.login;
+            const marker = "<!-- pr-assignment-check -->";
+
+            const maintainer = ["OWNER", "MEMBER", "COLLABORATOR"].includes(pr.author_association);
+            if (maintainer || pr.user.type === "Bot") {
+              core.info(`Skipping: ${author} is a maintainer or bot.`);
+              return;
+            }
+
+            const linked = [
+              ...(pr.body || "").matchAll(/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+#(\d+)\b/gi),
+            ].map((m) => Number(m[1]));
+
+            const problems = [];
+            if (!linked.length) {
+              problems.push("The description does not link an issue (add `Closes #<number>`).");
+            }
+            for (const number of [...new Set(linked)]) {
+              let issue;
+              try {
+                ({ data: issue } = await github.rest.issues.get({ owner, repo, issue_number: number }));
+              } catch {
+                problems.push(`#${number} was not found.`);
+                continue;
+              }
+              if (issue.pull_request) {
+                problems.push(`#${number} is a pull request, not an issue.`);
+              } else if (!issue.assignees.some((a) => a.login === author)) {
+                const who = issue.assignees.map((a) => "@" + a.login).join(", ");
+                problems.push(who ? `#${number} is assigned to ${who}.` : `#${number} is not assigned to you yet.`);
+              }
+            }
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: pr.number, per_page: 100,
+            });
+            const existing = comments.find((c) => c.body.includes(marker));
+
+            if (!problems.length) {
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner, repo, comment_id: existing.id,
+                  body: `${marker}\nIssue assignment check passed. Thanks @${author}!`,
+                });
+              }
+              return;
+            }
+
+            const body = [
+              marker,
+              `Thanks for the PR, @${author}! This repo asks contributors to be **assigned to an issue before working on it**, so two people don't solve the same thing.`,
+              "",
+              ...problems.map((p) => `- ${p}`),
+              "",
+              "To fix: comment `/assign` on an unassigned issue, then edit this PR's description (or push a commit) to re-run the check. " +
+                "See [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md#claim-an-issue-before-you-start).",
+            ].join("\n");
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
+            }
+            core.setFailed(problems.join(" "));
