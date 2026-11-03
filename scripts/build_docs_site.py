@@ -3,10 +3,15 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
+import html
+import json
+import re
 from pathlib import Path
 
-SITE_DIR = Path(__file__).resolve().parent.parent / "site"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SITE_DIR = REPO_ROOT / "site"
 SITE_NAME = "Loopmark Agent"
 SITE_URL = "https://loopmark-opensource.github.io/loopmark-agent"
 REPO_URL = "https://github.com/loopmark-opensource/loopmark-agent"
@@ -22,13 +27,25 @@ OG_IMAGE_ALT = "Loopmark Agent, open-source LangGraph marketing assistant"
 THEME_COLOR = "#009E96"
 
 
-def stylesheet_href() -> str:
-    """Cache-bust styles.css so browsers pick up theme changes after deploy."""
-    css_path = SITE_DIR / "styles.css"
-    if css_path.is_file():
-        digest = hashlib.sha256(css_path.read_bytes()).hexdigest()[:10]
-        return f"styles.css?v={digest}"
-    return "styles.css"
+def asset_href(name: str) -> str:
+    """Cache-bust a site asset so browsers pick up changes after deploy."""
+    path = SITE_DIR / name
+    if path.is_file():
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()[:10]
+        return f"{name}?v={digest}"
+    return name
+
+
+def package_version() -> str:
+    match = re.search(r'^version\s*=\s*"([^"]+)"', (REPO_ROOT / "pyproject.toml").read_text(), re.M)
+    return match.group(1) if match else "0.0.0"
+
+
+# Applied before first paint so a saved theme never flashes the wrong colors.
+THEME_INIT = (
+    'try{var t=localStorage.getItem("theme");'
+    'if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}'
+)
 
 JSON_LD = f"""{{
   "@context": "https://schema.org",
@@ -37,7 +54,7 @@ JSON_LD = f"""{{
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Cross-platform",
   "description": "{DESCRIPTION}",
-  "softwareVersion": "1.0.0",
+  "softwareVersion": "{package_version()}",
   "license": "https://opensource.org/licenses/MIT",
   "url": "{SITE_URL}",
   "codeRepository": "{REPO_URL}",
@@ -60,6 +77,14 @@ NAV = """
       <a href="{repo}">GitHub</a>
       <a class="nav-cta" href="{web}">Loopmark website</a>
     </nav>
+    <div class="nav-tools">
+      <div class="search" role="search">
+        <label class="visually-hidden" for="site-search">Search docs</label>
+        <input id="site-search" type="search" placeholder="Search docs" autocomplete="off" aria-controls="search-results">
+        <ul id="search-results" class="search-results" hidden></ul>
+      </div>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark theme">&#9790;</button>
+    </div>
   </div>
 </header>
 """.format(repo=REPO_URL, web=LOOPMARK_WEB_URL)
@@ -97,7 +122,9 @@ def page(title: str, path: str, body: str, description: str | None = None) -> st
 <meta name="twitter:image" content="{OG_IMAGE}">
 <meta name="twitter:image:alt" content="{OG_IMAGE_ALT}">
 <meta name="theme-color" content="{THEME_COLOR}">
-<link rel="stylesheet" href="{stylesheet_href()}">
+<script>{THEME_INIT}</script>
+<link rel="stylesheet" href="{asset_href("styles.css")}">
+<script src="{asset_href("site.js")}" defer></script>
 <script type="application/ld+json">{JSON_LD}</script>
 </head>
 <body>
@@ -261,12 +288,7 @@ loopmark-agent chat</code></pre>
 result = run_agent("Draft a LinkedIn post about our product launch")
 print(result.reply)
 print(result.intent)  # posting | complaint | funnel</code></pre>
-<h2>AgentResult</h2>
-<ul>
-  <li><code>reply</code>: assistant text for this turn</li>
-  <li><code>intent</code>: routed agent name</li>
-  <li><code>messages</code>: full LangChain message history for multi-turn chat</li>
-</ul>
+{api_reference}
 <h2>CLI equivalent</h2>
 <pre><code>loopmark-agent chat
 loopmark-agent stats</code></pre>
@@ -275,6 +297,93 @@ loopmark-agent stats</code></pre>
         "Programmatic run_agent API for Loopmark Agent integrations.",
     ),
 }
+
+
+def _docstring_html(doc: str) -> str:
+    """Render a Google-style docstring: summary paragraphs plus Args/Returns lists."""
+    blocks: list[str] = []
+    section: str | None = None
+    items: list[str] = []
+    para: list[str] = []
+
+    def flush_para() -> None:
+        if para:
+            blocks.append(f"<p>{html.escape(' '.join(para))}</p>")
+            para.clear()
+
+    def flush_items() -> None:
+        if section and items:
+            lis = "".join(f"<li>{i}</li>" for i in items)
+            blocks.append(f"<h4>{section}</h4><ul>{lis}</ul>")
+        items.clear()
+
+    for raw in doc.strip().splitlines():
+        line = raw.strip()
+        if line in ("Args:", "Returns:", "Raises:"):
+            flush_para()
+            flush_items()
+            section = line[:-1]
+        elif not line:
+            flush_para()
+        elif section:
+            name, sep, rest = line.partition(":")
+            if sep and section == "Args" and " " not in name:
+                items.append(f"<code>{html.escape(name)}</code>: {html.escape(rest.strip())}")
+            elif items:
+                items[-1] += " " + html.escape(line)
+            else:
+                items.append(html.escape(line))
+        else:
+            para.append(line)
+    flush_para()
+    flush_items()
+    return "\n".join(blocks)
+
+
+def api_reference(module_path: Path = REPO_ROOT / "core" / "run.py") -> str:
+    """Generate reference HTML from a module's public classes and functions (no imports)."""
+    tree = ast.parse(module_path.read_text(encoding="utf-8"))
+    sections = [f'<h2 id="reference">Reference <span class="version">v{package_version()}</span></h2>']
+    sections.append(
+        f"<p>Generated from <code>{module_path.relative_to(REPO_ROOT).as_posix()}</code> docstrings.</p>"
+    )
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and not node.name.startswith("_"):
+            doc = ast.get_docstring(node) or ""
+            anchor = f"ref-{node.name.lower()}"
+            if isinstance(node, ast.FunctionDef):
+                sig = f"{node.name}({ast.unparse(node.args)})"
+                if node.returns is not None:
+                    sig += f" -> {ast.unparse(node.returns)}"
+            else:
+                sig = f"class {node.name}"
+            parts = [f'<h3 id="{anchor}"><code>{html.escape(sig)}</code></h3>', _docstring_html(doc)]
+            if isinstance(node, ast.ClassDef):
+                fields = [
+                    f"<li><code>{html.escape(stmt.target.id)}: {html.escape(ast.unparse(stmt.annotation))}</code></li>"
+                    for stmt in node.body
+                    if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name)
+                ]
+                if fields:
+                    parts.append(f"<h4>Fields</h4><ul>{''.join(fields)}</ul>")
+            sections.append("\n".join(p for p in parts if p))
+    return "\n".join(sections)
+
+
+def _page_text(body: str) -> str:
+    text = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", body, flags=re.S | re.I)
+    text = re.sub(r"<[^>]+>", " ", text)
+    return re.sub(r"\s+", " ", html.unescape(text)).strip()
+
+
+def write_search_index(pages: dict[str, tuple[str, str, str, str | None]]) -> None:
+    entries = [
+        {"title": title, "url": filename, "text": _page_text(body)}
+        for filename, (title, _path, body, _desc) in pages.items()
+    ]
+    (SITE_DIR / "search-index.json").write_text(
+        json.dumps(entries, ensure_ascii=False, indent=1), encoding="utf-8"
+    )
 
 
 def write_sitemap() -> None:
@@ -301,8 +410,12 @@ Sitemap: {SITE_URL}/sitemap.xml
 
 def main() -> None:
     SITE_DIR.mkdir(parents=True, exist_ok=True)
-    for filename, (title, path, body, desc) in PAGES.items():
+    pages = dict(PAGES)
+    title, path, body, desc = pages["api.html"]
+    pages["api.html"] = (title, path, body.replace("{api_reference}", api_reference()), desc)
+    for filename, (title, path, body, desc) in pages.items():
         (SITE_DIR / filename).write_text(page(title, path, body, desc), encoding="utf-8")
+    write_search_index(pages)
     write_sitemap()
     write_robots()
     print(f"Built {len(PAGES)} pages in {SITE_DIR}")

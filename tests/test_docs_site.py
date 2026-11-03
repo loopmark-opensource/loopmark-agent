@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SITE_DIR = REPO_ROOT / "site"
+
+
+def _load_script(name: str):
+    spec = importlib.util.spec_from_file_location(name, REPO_ROOT / "scripts" / f"{name}.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_docs_pages_exist() -> None:
@@ -19,6 +27,8 @@ def test_docs_pages_exist() -> None:
         "sitemap.xml",
         "robots.txt",
         "styles.css",
+        "site.js",
+        "search-index.json",
         "social-preview.png",
     ):
         assert (SITE_DIR / name).exists(), f"missing site/{name}"
@@ -52,3 +62,46 @@ def test_json_ld_is_valid_json() -> None:
     data = json.loads(html[start:end])
     assert data["@type"] == "SoftwareApplication"
     assert data["offers"]["price"] == "0"
+
+
+def test_internal_links_and_anchors_resolve() -> None:
+    errors, _external = _load_script("check_links").check_internal(SITE_DIR)
+    assert errors == []
+
+
+def test_search_index_covers_every_page() -> None:
+    entries = json.loads((SITE_DIR / "search-index.json").read_text(encoding="utf-8"))
+    pages = {p.name for p in SITE_DIR.glob("*.html")}
+    assert {e["url"] for e in entries} == pages
+    assert all(e["title"] and e["text"] for e in entries)
+
+
+def test_pages_have_search_and_theme_toggle() -> None:
+    for page in SITE_DIR.glob("*.html"):
+        html = page.read_text(encoding="utf-8")
+        assert 'id="site-search"' in html, page.name
+        assert 'id="theme-toggle"' in html, page.name
+        assert "site.js?v=" in html, page.name
+
+
+def test_styles_define_dark_theme() -> None:
+    css = (SITE_DIR / "styles.css").read_text(encoding="utf-8")
+    assert '[data-theme="dark"]' in css
+    assert "prefers-color-scheme: dark" in css
+
+
+def test_api_reference_generated_from_docstrings() -> None:
+    build = _load_script("build_docs_site")
+    reference = build.api_reference()
+    assert 'id="ref-run_agent"' in reference
+    assert 'id="ref-agentresult"' in reference
+    assert "User input text." in reference
+    assert f"v{build.package_version()}" in reference
+
+
+def test_built_site_is_up_to_date() -> None:
+    """site/ must be regenerated (python scripts/build_docs_site.py) after editing the build script."""
+    build = _load_script("build_docs_site")
+    title, path, body, desc = build.PAGES["api.html"]
+    expected = build.page(title, path, body.replace("{api_reference}", build.api_reference()), desc)
+    assert (SITE_DIR / "api.html").read_text(encoding="utf-8") == expected

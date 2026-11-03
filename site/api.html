@@ -20,7 +20,9 @@
 <meta name="twitter:image" content="https://loopmark-opensource.github.io/loopmark-agent/social-preview.png">
 <meta name="twitter:image:alt" content="Loopmark Agent, open-source LangGraph marketing assistant">
 <meta name="theme-color" content="#009E96">
-<link rel="stylesheet" href="styles.css?v=86dd4c33f5">
+<script>try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="styles.css?v=1d8f688921">
+<script src="site.js?v=3ec4536c32" defer></script>
 <script type="application/ld+json">{
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
@@ -52,6 +54,14 @@
       <a href="https://github.com/loopmark-opensource/loopmark-agent">GitHub</a>
       <a class="nav-cta" href="https://main.d3b5sf354a54dh.amplifyapp.com/">Loopmark website</a>
     </nav>
+    <div class="nav-tools">
+      <div class="search" role="search">
+        <label class="visually-hidden" for="site-search">Search docs</label>
+        <input id="site-search" type="search" placeholder="Search docs" autocomplete="off" aria-controls="search-results">
+        <ul id="search-results" class="search-results" hidden></ul>
+      </div>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark theme">&#9790;</button>
+    </div>
   </div>
 </header>
 
@@ -64,12 +74,15 @@
 result = run_agent("Draft a LinkedIn post about our product launch")
 print(result.reply)
 print(result.intent)  # posting | complaint | funnel</code></pre>
-<h2>AgentResult</h2>
-<ul>
-  <li><code>reply</code>: assistant text for this turn</li>
-  <li><code>intent</code>: routed agent name</li>
-  <li><code>messages</code>: full LangChain message history for multi-turn chat</li>
-</ul>
+<h2 id="reference">Reference <span class="version">v1.0.0</span></h2>
+<p>Generated from <code>core/run.py</code> docstrings.</p>
+<h3 id="ref-agentresult"><code>class AgentResult</code></h3>
+<p>Structured response from a single agent turn.</p>
+<h4>Fields</h4><ul><li><code>reply: str</code></li><li><code>intent: str</code></li><li><code>messages: list[BaseMessage]</code></li></ul>
+<h3 id="ref-run_agent"><code>run_agent(message: str, history: Sequence[BaseMessage] | None=None, *, model: str | None=None) -&gt; AgentResult</code></h3>
+<p>Run one turn of the marketing agent graph.</p>
+<h4>Args</h4><ul><li><code>message</code>: User input text.</li><li><code>history</code>: Optional prior conversation messages for multi-turn chat.</li><li><code>model</code>: Optional OpenAI model override (e.g. gpt-4o-mini).</li></ul>
+<h4>Returns</h4><ul><li>AgentResult with reply text, routed intent, and full message history.</li></ul>
 <h2>CLI equivalent</h2>
 <pre><code>loopmark-agent chat
 loopmark-agent stats</code></pre>

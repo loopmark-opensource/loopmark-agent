@@ -6,6 +6,8 @@ on:
     paths:
       - "site/**"
       - "scripts/build_docs_site.py"
+      - "scripts/check_links.py"
+      - "core/run.py"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -33,6 +35,9 @@ jobs:
 
       - name: Build static docs
         run: python scripts/build_docs_site.py
+
+      - name: Check internal links
+        run: python scripts/check_links.py
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
