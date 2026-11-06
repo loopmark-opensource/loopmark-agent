@@ -16,23 +16,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply repository ruleset
+      - name: Apply repository rulesets (main, dev)
         env:
           GH_TOKEN: ${{ secrets.RULESET_ADMIN_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           if [[ -z "$GH_TOKEN" ]]; then
             echo "::error::Add repository secret RULESET_ADMIN_TOKEN (PAT with admin:repo) to sync rulesets."
             exit 1
           fi
-          RULESET_ID=$(gh api repos/${{ github.repository }}/rulesets --jq '.[] | select(.name=="main") | .id')
-          if [[ -z "$RULESET_ID" ]]; then
-            gh api \
-              --method POST \
-              repos/${{ github.repository }}/rulesets \
-              --input .github/rulesets/main.json
-          else
-            gh api \
-              --method PUT \
-              "repos/${{ github.repository }}/rulesets/${RULESET_ID}" \
-              --input .github/rulesets/main.json
-          fi
+          for file in .github/rulesets/*.json; do
+            name=$(jq -r .name "$file")
+            id=$(gh api "repos/$REPO/rulesets" --jq ".[] | select(.name==\"$name\") | .id")
+            if [[ -z "$id" ]]; then
+              gh api --method POST "repos/$REPO/rulesets" --input "$file" --jq '"created \(.name) (#\(.id))"'
+            else
+              gh api --method PUT "repos/$REPO/rulesets/$id" --input "$file" --jq '"updated \(.name) (#\(.id))"'
+            fi
+          done
