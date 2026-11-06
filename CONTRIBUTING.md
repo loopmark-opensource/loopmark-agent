@@ -63,7 +63,7 @@ Rules:
 - One person per issue; first `/assign` wins. Ask on the issue if it looks abandoned.
 - Up to 2 open assigned issues per contributor. Comment `/unassign` to release one.
 - If there is no PR activity for 14 days, maintainers may unassign you so someone else can pick it up.
-- PRs from non-maintainers fail the **Issue assignment** check unless they close an issue assigned to their author. For a fix with no issue yet, open the issue first.
+- PRs from non-maintainers fail the **Issue assignment** check unless they close an issue assigned to their author. The check is required on both `main` and `dev`, so such PRs cannot be merged. For a fix with no issue yet, open the issue first.
 
 ## Pull request expectations
 
