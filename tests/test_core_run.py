@@ -5,6 +5,7 @@ from __future__ import annotations
 from langchain_core.messages import AIMessage, HumanMessage
 
 from core.run import AgentResult, run_agent
+from config import config
 
 
 class _FakeGraph:
@@ -34,3 +35,20 @@ def test_run_agent_empty_reply_when_no_ai_message(monkeypatch):
     result = run_agent("hello")
     assert result.reply == ""
     assert result.intent == "unknown"
+
+
+def test_model_override_is_local_to_one_call(monkeypatch):
+    models = []
+
+    class RecordingGraph(_FakeGraph):
+        def invoke(self, state):
+            models.append(state.get("model"))
+            return super().invoke(state)
+
+    monkeypatch.setattr(config, "OPENAI_MODEL", "default-model")
+    monkeypatch.setattr("core.run.get_marketing_graph", lambda: RecordingGraph())
+
+    run_agent("Write a post", model="override-model")
+    assert config.OPENAI_MODEL == "default-model"
+    run_agent("Write another post")
+    assert models == ["override-model", "default-model"]

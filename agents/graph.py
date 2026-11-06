@@ -16,12 +16,13 @@ Graph topology
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Literal
 
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
-from typing_extensions import TypedDict, Annotated
+from typing_extensions import TypedDict, Annotated, NotRequired
 
 from config import config
 from prompts.templates import get_router_prompt
@@ -37,34 +38,24 @@ from agents.sub_agents import (
 class GraphState(TypedDict):
     messages: Annotated[list, add_messages]
     intent: str
+    model: NotRequired[str]
 
 
 # ─── Lazy-loaded sub-agents (avoid rebuilding on every call) ─────────────────
 
-_complaints_agent = None
-_posting_agent = None
-_funnel_agent = None
+@lru_cache(maxsize=8)
+def _get_complaints_agent(model: str):
+    return build_complaints_agent(model=model)
 
 
-def _get_complaints_agent():
-    global _complaints_agent
-    if _complaints_agent is None:
-        _complaints_agent = build_complaints_agent()
-    return _complaints_agent
+@lru_cache(maxsize=8)
+def _get_posting_agent(model: str):
+    return build_posting_agent(model=model)
 
 
-def _get_posting_agent():
-    global _posting_agent
-    if _posting_agent is None:
-        _posting_agent = build_posting_agent()
-    return _posting_agent
-
-
-def _get_funnel_agent():
-    global _funnel_agent
-    if _funnel_agent is None:
-        _funnel_agent = build_funnel_agent()
-    return _funnel_agent
+@lru_cache(maxsize=8)
+def _get_funnel_agent(model: str):
+    return build_funnel_agent(model=model)
 
 
 # ─── Nodes ───────────────────────────────────────────────────────────────────
@@ -73,8 +64,9 @@ def route_intent(state: GraphState) -> GraphState:
     """Classify the latest user message into an intent label."""
     user_input = state["messages"][-1].content if state["messages"] else ""
     router_prompt = get_router_prompt()
+    model = state.get("model") or config.OPENAI_MODEL
     llm = ChatOpenAI(
-        model=config.OPENAI_MODEL,
+        model=model,
         temperature=0,
         api_key=config.OPENAI_API_KEY,
     )
@@ -83,23 +75,23 @@ def route_intent(state: GraphState) -> GraphState:
     intent = result.content.strip().lower()
     if intent not in ("complaint", "posting", "funnel"):
         intent = "unknown"
-    return {"intent": intent, "messages": state["messages"]}
+    return {"intent": intent, "messages": state["messages"], "model": model}
 
 
 def complaints_node(state: GraphState) -> GraphState:
-    agent = _get_complaints_agent()
+    agent = _get_complaints_agent(state.get("model") or config.OPENAI_MODEL)
     result = agent.invoke({"messages": state["messages"]})
     return {"messages": result["messages"], "intent": state["intent"]}
 
 
 def posting_node(state: GraphState) -> GraphState:
-    agent = _get_posting_agent()
+    agent = _get_posting_agent(state.get("model") or config.OPENAI_MODEL)
     result = agent.invoke({"messages": state["messages"]})
     return {"messages": result["messages"], "intent": state["intent"]}
 
 
 def funnel_node(state: GraphState) -> GraphState:
-    agent = _get_funnel_agent()
+    agent = _get_funnel_agent(state.get("model") or config.OPENAI_MODEL)
     result = agent.invoke({"messages": state["messages"]})
     return {"messages": result["messages"], "intent": state["intent"]}
 

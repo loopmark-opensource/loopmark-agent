@@ -24,9 +24,9 @@ from tools.funnel_tools import FUNNEL_TOOLS
 from tools.audience_tools import AUDIENCE_TOOLS
 
 
-def _make_llm(temperature: float | None = None) -> ChatOpenAI:
+def _make_llm(temperature: float | None = None, *, model: str | None = None) -> ChatOpenAI:
     return ChatOpenAI(
-        model=config.OPENAI_MODEL,
+        model=model or config.OPENAI_MODEL,
         temperature=temperature if temperature is not None else config.OPENAI_TEMPERATURE,
         api_key=config.OPENAI_API_KEY,
     )
@@ -36,9 +36,9 @@ def _make_llm(temperature: float | None = None) -> ChatOpenAI:
 # Complaints Agent
 # ──────────────────────────────────────────────────────────────────────────────
 
-def build_complaints_agent():
+def build_complaints_agent(*, model: str | None = None):
     """Return a compiled LangGraph ReAct agent for complaint management."""
-    llm = _make_llm(temperature=0.3)
+    llm = _make_llm(temperature=0.3, model=model)
     prompt = get_complaints_prompt()
     return create_react_agent(
         model=llm,
@@ -51,9 +51,9 @@ def build_complaints_agent():
 # Posting / Content Agent
 # ──────────────────────────────────────────────────────────────────────────────
 
-def build_posting_agent():
+def build_posting_agent(*, model: str | None = None):
     """Return a compiled LangGraph ReAct agent for content creation, posting, and email marketing."""
-    llm = _make_llm(temperature=0.8)
+    llm = _make_llm(temperature=0.8, model=model)
     prompt = get_posting_prompt()
     return create_react_agent(
         model=llm,
@@ -66,9 +66,9 @@ def build_posting_agent():
 # Funnel Agent
 # ──────────────────────────────────────────────────────────────────────────────
 
-def build_funnel_agent():
+def build_funnel_agent(*, model: str | None = None):
     """Return a compiled LangGraph ReAct agent for funnel / lead management."""
-    llm = _make_llm(temperature=0.2)
+    llm = _make_llm(temperature=0.2, model=model)
     prompt = get_funnel_prompt()
     return create_react_agent(
         model=llm,
