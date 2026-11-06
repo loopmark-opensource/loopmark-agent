@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Optional
 from datetime import datetime
 from utils.clock import utcnow
+from utils.ids import new_id
 from pydantic import BaseModel, Field
 
 
@@ -27,7 +28,7 @@ class ComplaintCategory(str, Enum):
 
 
 class Complaint(BaseModel):
-    id: str = Field(default_factory=lambda: f"CMP-{int(utcnow().timestamp())}")
+    id: str = Field(default_factory=lambda: new_id("CMP"))
     customer_name: str = ""
     customer_email: str = ""
     message: str
@@ -114,7 +115,7 @@ class BusinessProfile(BaseModel):
 
 
 class AudiencePersona(BaseModel):
-    id: str = Field(default_factory=lambda: f"PERSONA-{int(utcnow().timestamp())}")
+    id: str = Field(default_factory=lambda: new_id("PERSONA"))
     name: str
     demographics: str = ""
     pain_points: str = ""
@@ -151,7 +152,7 @@ class FunnelStage(str, Enum):
 
 
 class Lead(BaseModel):
-    id: str = Field(default_factory=lambda: f"LEAD-{int(utcnow().timestamp())}")
+    id: str = Field(default_factory=lambda: new_id("LEAD"))
     name: str
     email: str
     company: str = ""

@@ -12,6 +12,7 @@ from typing import Sequence
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from agents.graph import get_marketing_graph
+from config import config
 
 
 @dataclass
@@ -35,21 +36,17 @@ def run_agent(
     Args:
         message: User input text.
         history: Optional prior conversation messages for multi-turn chat.
-        model: Optional OpenAI model override (e.g. gpt-4o-mini).
+        model: Optional OpenAI model override for this turn only (e.g. gpt-4o-mini).
 
     Returns:
         AgentResult with reply text, routed intent, and full message history.
     """
-    if model:
-        from config import config
-
-        config.OPENAI_MODEL = model
-
+    selected_model = model or config.OPENAI_MODEL
     graph = get_marketing_graph()
     conversation: list[BaseMessage] = list(history or [])
     conversation.append(HumanMessage(content=message.strip()))
 
-    result = graph.invoke({"messages": conversation})
+    result = graph.invoke({"messages": conversation, "model": selected_model})
     updated_messages: list[BaseMessage] = result["messages"]
     intent = result.get("intent", "unknown")
 

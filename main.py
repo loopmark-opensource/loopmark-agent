@@ -83,9 +83,6 @@ def chat(
 
     from core.run import run_agent
 
-    if model:
-        config.OPENAI_MODEL = model
-
     console.print(BANNER, style="bold blue")
 
     conversation_messages: list = []

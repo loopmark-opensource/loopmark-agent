@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from utils.clock import utcnow
+from utils.ids import new_id
 
 from langchain_core.tools import tool
 
@@ -105,7 +106,7 @@ def save_email_campaign(
         Confirmation with the campaign ID.
     """
     campaign = {
-        "id": f"EMAIL-{int(utcnow().timestamp())}",
+        "id": new_id("EMAIL"),
         "campaign_name": campaign_name,
         "subject_line": subject_line,
         "preheader": preheader,

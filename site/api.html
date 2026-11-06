@@ -83,7 +83,7 @@ print(result.intent)  # posting | complaint | funnel</code></pre>
 <h4>Fields</h4><ul><li><code>reply: str</code></li><li><code>intent: str</code></li><li><code>messages: list[BaseMessage]</code></li></ul>
 <h3 id="ref-run_agent"><code>run_agent(message: str, history: Sequence[BaseMessage] | None=None, *, model: str | None=None) -&gt; AgentResult</code></h3>
 <p>Run one turn of the marketing agent graph.</p>
-<h4>Args</h4><ul><li><code>message</code>: User input text.</li><li><code>history</code>: Optional prior conversation messages for multi-turn chat.</li><li><code>model</code>: Optional OpenAI model override (e.g. gpt-4o-mini).</li></ul>
+<h4>Args</h4><ul><li><code>message</code>: User input text.</li><li><code>history</code>: Optional prior conversation messages for multi-turn chat.</li><li><code>model</code>: Optional OpenAI model override for this turn only (e.g. gpt-4o-mini).</li></ul>
 <h4>Returns</h4><ul><li>AgentResult with reply text, routed intent, and full message history.</li></ul>
 <h2>CLI equivalent</h2>
 <pre><code>loopmark-agent chat
