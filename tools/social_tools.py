@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from utils.clock import utcnow
+from utils.ids import new_id
 from typing import Optional
 
 from langchain_core.tools import tool
@@ -102,7 +103,7 @@ def save_post(
         Confirmation with post ID.
     """
     post = {
-        "id": f"POST-{int(utcnow().timestamp())}",
+        "id": new_id("POST"),
         "platform": platform,
         "content": content,
         "hashtags": [h.strip() for h in hashtags.split(",") if h.strip()],
