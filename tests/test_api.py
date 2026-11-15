@@ -80,9 +80,11 @@ def test_crm_import_rejects_bad_json(client):
 
 
 def test_analyze_website_blocks_private_addresses(client, monkeypatch):
-    monkeypatch.setattr(api_module.socket, "getaddrinfo", _fake_dns("169.254.169.254"))
+    import tools.audience_research as research
+
+    monkeypatch.setattr(research.socket, "getaddrinfo", _fake_dns("169.254.169.254"))
     called = []
-    monkeypatch.setattr(api_module, "fetch_site_summary", lambda url: called.append(url))
+    monkeypatch.setattr(api_module, "fetch_site_summary", lambda url: called.append(url) or {})
 
     resp = client.post("/analyze/website", json={"url": "http://metadata.internal/latest"})
     assert resp.status_code == 422
@@ -90,14 +92,18 @@ def test_analyze_website_blocks_private_addresses(client, monkeypatch):
 
 
 def test_analyze_website_public_url(client, monkeypatch):
-    monkeypatch.setattr(api_module.socket, "getaddrinfo", _fake_dns("93.184.216.34"))
+    import tools.audience_research as research
+
+    monkeypatch.setattr(research.socket, "getaddrinfo", _fake_dns("93.184.216.34"))
     site = {
         "url": "https://example.com",
         "title": "Loopmark | AI Marketing for Small Teams",
         "description": "Automate social posts and email for SMB marketers.",
         "snippet": "Save time on content and grow your audience with AI.",
+        "social_links": {},
     }
     monkeypatch.setattr(api_module, "fetch_site_summary", lambda url: site)
+    monkeypatch.setattr(api_module, "_enrich_site_with_social_crawl", lambda s: s)
 
     resp = client.post("/analyze/website", json={"url": "example.com"})
     assert resp.status_code == 200

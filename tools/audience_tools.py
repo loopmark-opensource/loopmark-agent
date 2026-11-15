@@ -9,20 +9,18 @@ import io
 import json
 import re
 from collections import Counter, defaultdict
-from utils.clock import utcnow
-from html import unescape
-from urllib.parse import urlparse
 
-import httpx
 from langchain_core.tools import tool
 
 from models.schemas import AudiencePersona, BusinessProfile, CRMContact
 from storage import get_storage
-from tools.audience_research import personas_from_segment, personas_from_website
-
-_MAX_WEBSITE_CHARS = 8000
-_MAX_BODY_SNIPPET = 4000
-_FETCH_TIMEOUT = 15.0
+from tools.audience_research import (
+    _enrich_site_with_social_crawl,
+    fetch_site_summary,
+    personas_from_segment,
+    personas_from_website,
+)
+from utils.clock import utcnow
 
 _CRM_FIELD_ALIASES = {
     "segment": ("segment", "segment_name", "audience", "list", "group"),
@@ -33,50 +31,6 @@ _CRM_FIELD_ALIASES = {
     "job_title": ("job_title", "title", "role", "position"),
     "tags": ("tags", "labels", "interests"),
 }
-
-
-def _strip_html(text: str) -> str:
-    cleaned = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", text, flags=re.I | re.S)
-    cleaned = re.sub(r"<[^>]+>", " ", cleaned)
-    cleaned = unescape(cleaned)
-    return re.sub(r"\s+", " ", cleaned).strip()
-
-
-def _meta_content(html: str, *names: str) -> str:
-    for name in names:
-        match = re.search(
-            rf'<meta[^>]+(?:name|property)=["\']{re.escape(name)}["\'][^>]+content=["\'](.*?)["\']',
-            html,
-            re.I | re.S,
-        )
-        if not match:
-            match = re.search(
-                rf'<meta[^>]+content=["\'](.*?)["\'][^>]+(?:name|property)=["\']{re.escape(name)}["\']',
-                html,
-                re.I | re.S,
-            )
-        if match:
-            return _strip_html(match.group(1))
-    return ""
-
-
-def _headings(html: str, tag: str, limit: int = 8) -> list[str]:
-    found = re.findall(rf"<{tag}[^>]*>(.*?)</{tag}>", html, re.I | re.S)
-    results: list[str] = []
-    for item in found:
-        text = _strip_html(item)
-        if text and text not in results:
-            results.append(text)
-        if len(results) >= limit:
-            break
-    return results
-
-
-def _normalize_url(url: str) -> str:
-    parsed = urlparse(url.strip())
-    if not parsed.scheme:
-        return f"https://{url.strip()}"
-    return url.strip()
 
 
 def _format_list_field(value: str | list[str]) -> str:
@@ -305,25 +259,17 @@ def analyze_website_for_audience(url: str) -> str:
     Args:
         url: Website URL, e.g. https://example.com
     """
-    fetch_url = _normalize_url(url)
-    try:
-        with httpx.Client(
-            timeout=_FETCH_TIMEOUT,
-            follow_redirects=True,
-            headers={"User-Agent": "MarketingAgent/1.0 (audience-research)"},
-        ) as client:
-            response = client.get(fetch_url)
-            response.raise_for_status()
-            html = response.text[:_MAX_WEBSITE_CHARS]
-    except httpx.HTTPError as exc:
-        return f"Could not fetch website '{fetch_url}': {exc}"
+    site = fetch_site_summary(url)
+    fetch_url = site.get("url") or url
+    if site.get("error") and not (site.get("title") or site.get("description") or site.get("snippet")):
+        return f"Could not fetch website '{fetch_url}': {site['error']}"
 
-    title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
-    title = _strip_html(title_match.group(1)) if title_match else ""
-    description = _meta_content(html, "description", "og:description", "twitter:description")
-    h1s = _headings(html, "h1")
-    h2s = _headings(html, "h2", limit=6)
-    body = _strip_html(html)[:_MAX_BODY_SNIPPET]
+    site = _enrich_site_with_social_crawl(site)
+    title = site.get("title") or ""
+    description = site.get("description") or ""
+    headings = site.get("headings") or ""
+    subheadings = site.get("subheadings") or ""
+    body = site.get("snippet") or ""
 
     lines = [
         f"Website analysis: {fetch_url}",
@@ -331,10 +277,10 @@ def analyze_website_for_audience(url: str) -> str:
         f"Title: {title or '(not found)'}",
         f"Meta description: {description or '(not found)'}",
     ]
-    if h1s:
-        lines.append("H1 headings: " + " | ".join(h1s))
-    if h2s:
-        lines.append("H2 headings: " + " | ".join(h2s))
+    if headings:
+        lines.append(f"H1 headings: {headings}")
+    if subheadings:
+        lines.append(f"H2 headings: {subheadings}")
     lines.extend(
         [
             "",
@@ -352,13 +298,6 @@ def analyze_website_for_audience(url: str) -> str:
             existing["description"] = description
         get_storage().save_business_profile(existing)
 
-    site = {
-        "url": fetch_url,
-        "title": title,
-        "description": description,
-        "headings": " | ".join(h1s),
-        "snippet": body,
-    }
     research = personas_from_website(
         site,
         product_name=existing.get("product_name"),
