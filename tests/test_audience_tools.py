@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import httpx
+import socket
 
 from tools import audience_research
 from tools.audience_tools import (
@@ -100,26 +100,22 @@ def test_save_and_list_audience_personas():
 
 
 def test_analyze_website_for_audience(monkeypatch):
-    class MockResponse:
-        text = SAMPLE_HTML
-
-        def raise_for_status(self):
-            return None
-
-    class MockClient:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *args):
-            return False
-
-        def get(self, url):
-            return MockResponse()
-
-    monkeypatch.setattr("tools.audience_tools.httpx.Client", MockClient)
+    site = {
+        "url": "https://loopmark.example",
+        "title": "Loopmark | AI Marketing for Small Teams",
+        "description": "Automate social posts and email for SMB marketers.",
+        "headings": "Marketing made simple",
+        "subheadings": "For small business owners",
+        "snippet": "Save time on content and grow your audience with AI.",
+        "paragraphs": ["Save time on content and grow your audience with AI."],
+        "social_links": {},
+        "social_presence": [],
+        "keywords": "",
+        "structured_data": "",
+        "problem_phrases": [],
+    }
+    monkeypatch.setattr("tools.audience_tools.fetch_site_summary", lambda url: site)
+    monkeypatch.setattr("tools.audience_tools._enrich_site_with_social_crawl", lambda s: s)
 
     result = analyze_website_for_audience.invoke({"url": "loopmark.example"})
     assert "Loopmark" in result
@@ -132,10 +128,16 @@ def test_analyze_website_for_audience(monkeypatch):
 
 
 def test_analyze_website_fetch_error(monkeypatch):
-    def raise_error(*args, **kwargs):
-        raise httpx.ConnectError("connection refused")
-
-    monkeypatch.setattr("tools.audience_tools.httpx.Client", raise_error)
+    monkeypatch.setattr(
+        "tools.audience_tools.fetch_site_summary",
+        lambda url: {
+            "url": "https://offline.example",
+            "error": "connection refused",
+            "title": "",
+            "description": "",
+            "snippet": "",
+        },
+    )
 
     result = analyze_website_for_audience.invoke({"url": "https://offline.example"})
     assert "Could not fetch website" in result
@@ -230,3 +232,48 @@ def test_personas_from_website_fallback_on_fetch_error():
 def test_import_crm_invalid_format():
     result = import_crm_segments.invoke({"data": "not-json", "format": "json"})
     assert "Failed to parse CRM data" in result
+
+
+def _fake_dns(default_ip: str):
+    def resolver(host, port, *a, **kw):
+        # Literal IP hostnames resolve to themselves so private-IP checks still fire.
+        ip = host if host.replace(".", "").isdigit() or ":" in host else default_ip
+        if host in {"localhost", "metadata.internal", "intranet.local"}:
+            ip = default_ip
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, port or 0))]
+
+    return resolver
+
+
+def test_safe_http_get_blocks_redirect_to_private_ip(monkeypatch):
+    calls = {"n": 0}
+
+    def fake_pinned(url, timeout):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return 302, {"location": "http://169.254.169.254/latest"}, b""
+        raise AssertionError("should not follow private redirect")
+
+    monkeypatch.setattr(audience_research.socket, "getaddrinfo", _fake_dns("93.184.216.34"))
+    monkeypatch.setattr(audience_research, "_pinned_http_request", fake_pinned)
+
+    try:
+        audience_research.safe_http_get("https://example.com/start")
+        raise AssertionError("expected UnsafeURLError")
+    except audience_research.UnsafeURLError as exc:
+        assert "public address" in str(exc).lower()
+    assert calls["n"] == 1
+
+
+def test_crawl_social_skips_localhost(monkeypatch):
+    monkeypatch.setattr(audience_research.socket, "getaddrinfo", _fake_dns("127.0.0.1"))
+    result = audience_research._crawl_social_profile("linkedin", "http://localhost:8080/in/evil")
+    assert result["status"] == "skipped"
+    assert "public" in result["error"].lower() or "blocked" in result["error"].lower()
+
+
+def test_fetch_site_summary_rejects_private_host(monkeypatch):
+    monkeypatch.setattr(audience_research.socket, "getaddrinfo", _fake_dns("10.0.0.5"))
+    site = audience_research.fetch_site_summary("http://intranet.local/admin")
+    assert site["error"]
+    assert "public address" in site["error"].lower()

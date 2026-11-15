@@ -11,13 +11,10 @@ except `/health`. Leave it unset only when the server is bound to localhost.
 from __future__ import annotations
 
 import hmac
-import ipaddress
 import json
 import os
-import socket
 from datetime import datetime
 from typing import Literal
-from urllib.parse import urlparse
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -25,7 +22,13 @@ from pydantic import BaseModel, Field
 
 from models.schemas import AudiencePersona, BusinessProfile
 from storage import get_storage
-from tools.audience_research import _normalize_url, fetch_site_summary, personas_from_website
+from tools.audience_research import (
+    UnsafeURLError,
+    _enrich_site_with_social_crawl,
+    assert_public_http_url,
+    fetch_site_summary,
+    personas_from_website,
+)
 from tools.audience_tools import _parse_crm_csv, _parse_crm_json, _summarize_crm_segments
 
 API_KEY_ENV = "LOOPMARK_API_KEY"
@@ -89,23 +92,6 @@ def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
         raise HTTPException(status_code=401, detail="Invalid or missing X-API-Key header.")
 
 
-def _assert_public_url(url: str) -> str:
-    """Reject URLs that resolve to private, loopback, or link-local addresses (SSRF guard)."""
-    fetch_url = _normalize_url(url)
-    parsed = urlparse(fetch_url)
-    if parsed.scheme not in ("http", "https") or not parsed.hostname:
-        raise HTTPException(status_code=422, detail="URL must be http(s) with a hostname.")
-    try:
-        infos = socket.getaddrinfo(parsed.hostname, parsed.port or 443)
-    except socket.gaierror:
-        raise HTTPException(status_code=422, detail=f"Could not resolve host '{parsed.hostname}'.")
-    for info in infos:
-        ip = ipaddress.ip_address(info[4][0])
-        if not ip.is_global:
-            raise HTTPException(status_code=422, detail="URL must point to a public address.")
-    return fetch_url
-
-
 def _to_messages(history: list[ChatTurn]) -> list[BaseMessage]:
     return [
         HumanMessage(content=t.content) if t.role == "user" else AIMessage(content=t.content)
@@ -156,7 +142,14 @@ def create_app() -> FastAPI:
 
     @app.post("/analyze/website", dependencies=secured)
     def analyze_website(body: WebsiteIn) -> dict:
-        site = fetch_site_summary(_assert_public_url(body.url))
+        try:
+            assert_public_http_url(body.url)
+            site = fetch_site_summary(body.url)
+        except UnsafeURLError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        if site.get("error") and "public address" in site["error"].lower():
+            raise HTTPException(status_code=422, detail=site["error"])
+        site = _enrich_site_with_social_crawl(site)
         profile = get_storage().load_business_profile() or {}
         research = personas_from_website(
             site,

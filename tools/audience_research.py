@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 import html
+import http.client
+import ipaddress
 import json
 import re
+import socket
+import ssl
 from html.parser import HTMLParser
 from typing import Any
-from urllib.parse import urlparse
-
-import httpx
+from urllib.parse import urljoin, urlparse
 
 _ALLOWED_SCHEMES = frozenset({"http", "https"})
+_MAX_REDIRECTS = 5
 _FETCH_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -20,6 +23,10 @@ _FETCH_HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
 }
+
+
+class UnsafeURLError(ValueError):
+    """Raised when a URL targets a non-public address (SSRF guard)."""
 _OFFERING_BAD_START = re.compile(
     r"^(that|which|who|whom|whose|to|for|and|or|the|a|an|help|helps|helping|our|your|with|in|on|at|"
     r"serving|deliver(?:s|ing)?|we|tools|tech)\b",
@@ -105,6 +112,109 @@ def _normalize_url(url: str) -> str:
     if not parsed.scheme:
         return f"https://{url}"
     return url
+
+
+def assert_public_http_url(url: str) -> str:
+    """Normalize and ensure the URL scheme/host resolve only to public addresses."""
+    fetch_url = _normalize_url(url)
+    parsed = urlparse(fetch_url)
+    if parsed.scheme not in _ALLOWED_SCHEMES or not parsed.hostname:
+        raise UnsafeURLError("URL must be http(s) with a hostname.")
+    _public_ips_for_host(parsed.hostname, parsed.port or (443 if parsed.scheme == "https" else 80))
+    return fetch_url
+
+
+def _public_ips_for_host(hostname: str, port: int) -> list[str]:
+    try:
+        infos = socket.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)
+    except socket.gaierror as exc:
+        raise UnsafeURLError(f"Could not resolve host '{hostname}'.") from exc
+    ips: list[str] = []
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if not ip.is_global:
+            raise UnsafeURLError("URL must point to a public address.")
+        ips.append(str(ip))
+    if not ips:
+        raise UnsafeURLError(f"Could not resolve host '{hostname}'.")
+    return ips
+
+
+def _request_path(parsed) -> str:
+    path = parsed.path or "/"
+    if parsed.query:
+        path = f"{path}?{parsed.query}"
+    return path
+
+
+def _pinned_http_request(url: str, timeout: float) -> tuple[int, dict[str, str], bytes]:
+    """
+    GET a URL by connecting to a DNS-validated public IP while sending the
+    original Host header (and TLS SNI) to defeat DNS rebinding.
+    """
+    parsed = urlparse(url)
+    hostname = parsed.hostname
+    if not hostname:
+        raise UnsafeURLError("URL must be http(s) with a hostname.")
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    ip = _public_ips_for_host(hostname, port)[0]
+    path = _request_path(parsed)
+    headers = {**_FETCH_HEADERS, "Host": hostname, "Connection": "close"}
+
+    sock = socket.create_connection((ip, port), timeout=timeout)
+    try:
+        if parsed.scheme == "https":
+            ctx = ssl.create_default_context()
+            sock = ctx.wrap_socket(sock, server_hostname=hostname)
+            conn: http.client.HTTPConnection = http.client.HTTPSConnection(
+                hostname, port=port, timeout=timeout, context=ctx
+            )
+        else:
+            conn = http.client.HTTPConnection(ip, port=port, timeout=timeout)
+        conn.sock = sock
+        try:
+            conn.request("GET", path, headers=headers)
+            response = conn.getresponse()
+            body = response.read()
+            resp_headers = {k.lower(): v for k, v in response.getheaders()}
+            return response.status, resp_headers, body
+        finally:
+            conn.close()
+    except Exception:
+        sock.close()
+        raise
+
+
+def safe_http_get(
+    url: str,
+    *,
+    timeout: float = 10,
+    max_bytes: int = 120_000,
+    max_redirects: int = _MAX_REDIRECTS,
+) -> tuple[str, str]:
+    """
+    Fetch a public http(s) URL with SSRF protections.
+
+    Validates every redirect hop, caps hops, and pins the TCP connection to the
+    IP that passed the public-address check.
+
+    Returns (text, final_url). Raises UnsafeURLError for non-public targets and
+    OSError/http.client errors for network failures.
+    """
+    current = assert_public_http_url(url)
+    for _ in range(max_redirects + 1):
+        status, headers, body = _pinned_http_request(current, timeout)
+        if status in {301, 302, 303, 307, 308}:
+            location = headers.get("location")
+            if not location:
+                raise OSError(f"Redirect from {current} without Location header")
+            current = assert_public_http_url(urljoin(current, location))
+            continue
+        if status >= 400:
+            raise OSError(f"HTTP {status} for {current}")
+        text = body[:max_bytes].decode("utf-8", errors="replace")
+        return text, current
+    raise OSError(f"Too many redirects (max {max_redirects}) for {url}")
 
 
 def _is_readable_text(text: str) -> bool:
@@ -279,15 +389,27 @@ def _extract_open_graph_meta(raw_html: str) -> dict[str, str]:
 
 def _fetch_page_raw(url: str, timeout: int = 8) -> tuple[str, str]:
     try:
-        with httpx.Client(timeout=timeout, follow_redirects=True, headers=_FETCH_HEADERS) as client:
-            response = client.get(url)
-            response.raise_for_status()
-            return response.text[:80_000], ""
-    except httpx.HTTPError as exc:
+        text, _final = safe_http_get(url, timeout=timeout, max_bytes=80_000)
+        return text, ""
+    except UnsafeURLError as exc:
+        return "", f"skipped (unsafe URL): {exc}"
+    except (OSError, ssl.SSLError, http.client.HTTPException, UnicodeError) as exc:
         return "", str(exc)
 
 
 def _crawl_social_profile(platform: str, url: str) -> dict[str, Any]:
+    try:
+        assert_public_http_url(url)
+    except UnsafeURLError as exc:
+        return {
+            "platform": platform,
+            "url": url,
+            "status": "skipped",
+            "error": f"Non-public address blocked: {exc}",
+            "title": "",
+            "bio": "",
+        }
+
     raw, error = _fetch_page_raw(url)
     if error:
         return {
@@ -503,38 +625,20 @@ def _pain_points_from_online_presence(
 
 
 def fetch_site_summary(url: str, timeout: int = 10) -> dict[str, Any]:
-    fetch_url = _normalize_url(url)
-    parsed = urlparse(fetch_url)
-    if parsed.scheme not in _ALLOWED_SCHEMES:
-        return _empty_site_result(fetch_url, f"Unsupported URL scheme: {parsed.scheme}")
-
-    social_links: dict[str, str] = {}
     try:
-        with httpx.Client(timeout=timeout, follow_redirects=True, headers=_FETCH_HEADERS) as client:
-            response = client.get(fetch_url)
-            response.raise_for_status()
-            full_text = response.text
-            raw = full_text[:120_000]
-            social_links = _extract_social_links(full_text)
-    except httpx.HTTPError as exc:
+        fetch_url = assert_public_http_url(url)
+    except UnsafeURLError as exc:
+        return _empty_site_result(_normalize_url(url), str(exc))
+
+    try:
+        full_text, fetch_url = safe_http_get(fetch_url, timeout=timeout, max_bytes=120_000)
+    except UnsafeURLError as exc:
+        return _empty_site_result(fetch_url, str(exc))
+    except (OSError, ssl.SSLError, http.client.HTTPException, UnicodeError) as exc:
         return _empty_site_result(fetch_url, str(exc))
 
-    if not social_links:
-        try:
-            with httpx.Client(
-                timeout=timeout,
-                follow_redirects=True,
-                headers={"User-Agent": "Mozilla/5.0"},
-            ) as client:
-                retry = client.get(fetch_url)
-                retry.raise_for_status()
-                full_text = retry.text
-                retry_raw = full_text[:120_000]
-                social_links = _extract_social_links(full_text)
-                if social_links:
-                    raw = retry_raw
-        except httpx.HTTPError:
-            pass
+    raw = full_text[:120_000]
+    social_links = _extract_social_links(full_text)
 
     parser = _PageMetaParser()
     parser.feed(raw)
