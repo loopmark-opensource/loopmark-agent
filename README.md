@@ -299,7 +299,7 @@ loopmark-agent serve                  # http://127.0.0.1:8000, OpenAPI docs at /
 | POST | `/crm/import` | CSV or JSON segment import |
 | POST | `/chat` | One agent turn: `{"message": "...", "history": [...]}` |
 
-Set `LOOPMARK_API_KEY` to require an `X-API-Key` header on every endpoint except `/health`. `serve` refuses to bind beyond localhost without it. `/analyze/website` rejects URLs that resolve to private, loopback, or link-local addresses.
+Set `LOOPMARK_API_KEY` to require an `X-API-Key` header on every endpoint except `/health`. `serve` refuses to bind beyond localhost without it. Website fetches (CLI and `/analyze/website`) reject private, loopback, and link-local addresses, validate redirect hops, and pin connections to the resolved public IP.
 
 ---
 
