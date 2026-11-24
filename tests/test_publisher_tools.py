@@ -59,6 +59,8 @@ def test_oauth1_signature_matches_twitter_reference_example():
 
 
 def test_post_to_twitter_sends_signed_request(monkeypatch):
+    monkeypatch.setenv("LOOPMARK_ALLOW_LIVE_PUBLISH", "true")
+    monkeypatch.setattr("tools.publish_guard._ask_human", lambda platform, content: True)
     monkeypatch.setenv("TWITTER_API_KEY", "key")
     monkeypatch.setenv("TWITTER_API_SECRET", "secret")
     monkeypatch.setenv("TWITTER_ACCESS_TOKEN", "token")
@@ -84,6 +86,8 @@ def test_post_to_twitter_sends_signed_request(monkeypatch):
 
 
 def test_post_to_twitter_api_error(monkeypatch):
+    monkeypatch.setenv("LOOPMARK_ALLOW_LIVE_PUBLISH", "true")
+    monkeypatch.setattr("tools.publish_guard._ask_human", lambda platform, content: True)
     monkeypatch.setenv("TWITTER_API_KEY", "key")
     monkeypatch.setenv("TWITTER_API_SECRET", "secret")
     monkeypatch.setenv("TWITTER_ACCESS_TOKEN", "token")

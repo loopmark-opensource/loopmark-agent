@@ -10,6 +10,9 @@ Supported channels:
 All credentials are read via `credentials.get_credentials()` (default: `.env` BYOK).
 Each tool degrades gracefully: if credentials are missing it returns
 a clear error rather than crashing the agent.
+
+Every live call goes through `tools.publish_guard.check_live_publish`: nothing is sent
+unless LOOPMARK_ALLOW_LIVE_PUBLISH=true and a human approved the content.
 """
 
 from __future__ import annotations
@@ -29,6 +32,7 @@ from langchain_core.tools import tool
 
 from credentials import get_credentials
 from storage import get_storage
+from tools.publish_guard import check_live_publish, is_approved
 
 
 def _twitter_creds() -> dict | None:
@@ -133,6 +137,9 @@ def post_to_twitter(content: str, post_id: str = "") -> str:
     if len(content) > 280:
         return f"Tweet exceeds 280 characters ({len(content)}). Please shorten it."
 
+    if refusal := check_live_publish("Twitter", content, post_id):
+        return refusal
+
     try:
         resp = httpx.post(
             TWITTER_TWEETS_URL,
@@ -185,6 +192,9 @@ def post_to_linkedin(content: str, post_id: str = "") -> str:
 
     if len(content) > 3000:
         return f"LinkedIn post exceeds 3,000 characters ({len(content)}). Please shorten it."
+
+    if refusal := check_live_publish("LinkedIn", content, post_id):
+        return refusal
 
     person_urn = creds["person_id"]
     if not person_urn.startswith("urn:li:person:"):
@@ -279,6 +289,10 @@ def schedule_via_buffer(
             return f"Invalid scheduled_at format. Use ISO 8601, e.g. '2026-07-10T09:00:00'."
     else:
         payload["now"] = "false"  # adds to queue
+
+    # A Buffer queue entry goes out automatically, so it is a live publish too.
+    if refusal := check_live_publish("Buffer", content, post_id):
+        return refusal
 
     try:
         resp = httpx.post(
@@ -385,6 +399,10 @@ def publish_scheduled_posts(dry_run: bool = False) -> str:
         lines.append(f"  [{p['id']}] {platform.upper()} — {p['content'][:60]}...")
 
         if not dry_run:
+            # Unattended runs never prompt: only posts a human approved ahead of time go out.
+            if not is_approved(p["id"], p["content"]):
+                lines.append(f"    → Skipped: awaiting approval (`loopmark-agent approve {p['id']}`)")
+                continue
             if platform == "twitter":
                 result = post_to_twitter.invoke({"content": p["content"], "post_id": p["id"]})
             elif platform == "linkedin":

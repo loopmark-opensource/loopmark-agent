@@ -44,6 +44,7 @@ from api.limits import (
     env_int,
     rate_limit,
 )
+from tools.publish_guard import disable_prompts
 
 API_KEY_ENV = "LOOPMARK_API_KEY"
 
@@ -125,6 +126,8 @@ def create_app() -> FastAPI:
     max_body = env_int(MAX_BODY_ENV, DEFAULT_MAX_BODY)
     chat_per_min = env_int(CHAT_RATE_ENV, DEFAULT_CHAT_PER_MIN)
     analyze_per_min = env_int(ANALYZE_RATE_ENV, DEFAULT_ANALYZE_PER_MIN)
+    # Requests must never hang on a terminal y/N prompt; publishing needs prior `approve`.
+    disable_prompts()
     app = FastAPI(
         title="Loopmark Agent API",
         description=(
