@@ -122,6 +122,7 @@
 <h3>Recommendations</h3>
 <ul>
   <li>Do not commit <code>data/</code>, CRM exports, or <code>.env</code> to git.</li>
+  <li>Data files are written owner-only (<code>0600</code>) and a new <code>DATA_DIR</code> is created <code>0700</code>. If you point <code>DATA_DIR</code> at an existing folder, check its permissions yourself (<code>chmod 700</code> unless it must be shared).</li>
   <li>Import the minimum CRM columns needed (avoid full contact dumps when anonymized segments are enough).</li>
   <li>Honor GDPR, CCPA, and local rules for consent, retention, and deletion when processing customer or lead data.</li>
   <li>Redact or delete JSON files when offboarding users or closing a deployment.</li>
