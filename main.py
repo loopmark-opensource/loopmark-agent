@@ -160,12 +160,6 @@ def serve(
     port: int = typer.Option(8000, help="Port to listen on"),
 ):
     """Run the REST API (OpenAPI docs at /docs)."""
-    try:
-        import uvicorn
-    except ImportError:
-        console.print("[error]ERROR:[/error] Install the API extra: pip install 'loopmark-agent[api]'")
-        raise typer.Exit(code=1)
-
     if host not in ("127.0.0.1", "localhost") and not os.getenv("LOOPMARK_API_KEY"):
         console.print("[error]ERROR:[/error] Set LOOPMARK_API_KEY before binding to a non-local address.")
         raise typer.Exit(code=1)
@@ -175,6 +169,12 @@ def serve(
             f"[error]ERROR:[/error] DATA_DIR {config.DATA_DIR} is group/world-writable and holds PII. "
             f"Run: chmod 700 {config.DATA_DIR}"
         )
+        raise typer.Exit(code=1)
+
+    try:
+        import uvicorn
+    except ImportError:
+        console.print("[error]ERROR:[/error] Install the API extra: pip install 'loopmark-agent[api]'")
         raise typer.Exit(code=1)
 
     uvicorn.run("api.app:app", host=host, port=port)
