@@ -215,6 +215,7 @@ loopmark-agent chat
 
 | Variable | Platform | Description |
 |---|---|---|
+| `LOOPMARK_ALLOW_LIVE_PUBLISH` | All | `true` to allow real posts. **Off by default**: publish tools only say what they would post |
 | `TWITTER_API_KEY` | Twitter/X | App API key |
 | `TWITTER_API_SECRET` | Twitter/X | App API secret |
 | `TWITTER_ACCESS_TOKEN` | Twitter/X | User access token |
@@ -401,10 +402,13 @@ Score lead LEAD-1234567890 at 75 — they booked a demo call.
 ```
 1. You ask the agent to write and schedule a post
 2. Agent saves it to data/posts.json with status "scheduled"
-3. Scheduler (or manual publish) picks up posts when scheduled_date arrives
-4. Post goes live via Twitter, LinkedIn, or Buffer
-5. Status updates to "published" or "failed"
+3. You approve it:  loopmark-agent approve POST-ID
+4. Scheduler (or manual publish) picks up approved posts when scheduled_date arrives
+5. Post goes live via Twitter, LinkedIn, or Buffer
+6. Status updates to "published" or "failed"
 ```
+
+**Human gate:** the agent can draft and schedule, but cannot post on its own. A live post needs `LOOPMARK_ALLOW_LIVE_PUBLISH=true` **and** a human approval of that exact text, either `loopmark-agent approve POST-ID` (stored as a content hash, so edited text needs re-approval) or a y/N prompt when you chat in a terminal. The scheduler and REST API never prompt; they only publish approved posts. Every attempt is logged with the platform and a SHA-256 of the content.
 
 ### Posting options
 

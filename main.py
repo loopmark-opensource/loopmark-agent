@@ -5,6 +5,7 @@ Marketing Agent — CLI entry point.
 Usage:
     loopmark-agent chat             # interactive chat (after pip install)
     loopmark-agent stats
+    loopmark-agent approve POST-ID  # allow a saved post to be published live
     loopmark-agent serve            # REST API (needs `pip install loopmark-agent[api]`)
     python main.py chat             # from a local clone
 """
@@ -152,6 +153,34 @@ def _data_dir_is_shared_writable() -> bool:
     if os.name != "posix" or not os.path.isdir(config.DATA_DIR):
         return False
     return bool(os.stat(config.DATA_DIR).st_mode & 0o022)
+
+
+@app.command()
+def approve(
+    post_id: str = typer.Argument(..., help="Saved post ID, e.g. POST-1a2b..."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip the confirmation prompt"),
+):
+    """Approve a saved post for live publishing (the agent cannot do this itself)."""
+    from rich.prompt import Confirm
+
+    from tools.publish_guard import approve_post, find_post, live_publish_enabled
+
+    post = find_post(post_id)
+    if not post:
+        console.print(f"[error]ERROR:[/error] No saved post with ID {post_id}.")
+        raise typer.Exit(code=1)
+
+    console.print(
+        Panel(post.get("content", ""), title=f"{post.get('platform', '?')} · {post_id}", border_style="yellow")
+    )
+    if not yes and not Confirm.ask("Approve this exact text for live publishing?", default=False):
+        console.print("[info]Not approved.[/info]")
+        raise typer.Exit(code=1)
+
+    approve_post(post_id)
+    console.print(f"[agent]Approved {post_id}.[/agent] Editing the text later requires approving again.")
+    if not live_publish_enabled():
+        console.print("[info]Live publishing is still off: set LOOPMARK_ALLOW_LIVE_PUBLISH=true in .env.[/info]")
 
 
 @app.command()
