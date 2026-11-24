@@ -301,6 +301,18 @@ loopmark-agent serve                  # http://127.0.0.1:8000, OpenAPI docs at /
 
 Set `LOOPMARK_API_KEY` to require an `X-API-Key` header on every endpoint except `/health`. `serve` refuses to bind beyond localhost without it. Website fetches (CLI and `/analyze/website`) reject private, loopback, and link-local addresses, validate redirect hops, and pin connections to the resolved public IP.
 
+**Limits** (override with env vars; see `api/limits.py`):
+
+| Limit | Default | Env var | Response |
+|---|---|---|---|
+| Request body | 1,000,000 bytes | `LOOPMARK_API_MAX_BODY_BYTES` | 413 |
+| `POST /chat` per client | 20 / minute | `LOOPMARK_API_CHAT_PER_MIN` | 429 + `Retry-After` |
+| `POST /analyze/website` per client | 10 / minute | `LOOPMARK_API_ANALYZE_PER_MIN` | 429 + `Retry-After` |
+| Chat history / message | 50 turns / 8,000 chars | — | 422 |
+| CRM import | 5,000 rows per request, 50,000 stored | — | 413 |
+
+Rate limits are in memory, per process: run a single worker, or also limit at your reverse proxy.
+
 ---
 
 ## Example prompts
