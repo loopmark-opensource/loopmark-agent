@@ -107,6 +107,8 @@ You act as the **data controller**. The agent persists JSON under `data/` (or yo
 
 **Third parties:** OpenAI receives prompts you trigger (website excerpts, CRM summaries, chat). Configure keys in `.env` only; review [OpenAI policies](https://openai.com/policies). Publishing integrations (Twitter, LinkedIn, Buffer) are separate and opt-in.
 
+**File permissions:** data files are written owner-only (`0600`), atomically, and a newly created `DATA_DIR` is `0700`. An existing `DATA_DIR` is left as is (it may be a shared volume), so check it with `ls -ld data`; `loopmark-agent serve` refuses to start with `LOOPMARK_API_KEY` set if `DATA_DIR` is group- or world-writable.
+
 **Recommendations:** Do not commit `data/` or CRM exports; import minimal columns; meet GDPR/CCPA/consent requirements for your jurisdiction; delete local JSON when offboarding users.
 
 ---

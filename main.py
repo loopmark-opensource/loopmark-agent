@@ -147,20 +147,34 @@ def stats():
     console.print()
 
 
+def _data_dir_is_shared_writable() -> bool:
+    """True when DATA_DIR exists and other users could plant or replace data files (POSIX only)."""
+    if os.name != "posix" or not os.path.isdir(config.DATA_DIR):
+        return False
+    return bool(os.stat(config.DATA_DIR).st_mode & 0o022)
+
+
 @app.command()
 def serve(
     host: str = typer.Option("127.0.0.1", help="Bind address. Set LOOPMARK_API_KEY before exposing beyond localhost."),
     port: int = typer.Option(8000, help="Port to listen on"),
 ):
     """Run the REST API (OpenAPI docs at /docs)."""
+    if host not in ("127.0.0.1", "localhost") and not os.getenv("LOOPMARK_API_KEY"):
+        console.print("[error]ERROR:[/error] Set LOOPMARK_API_KEY before binding to a non-local address.")
+        raise typer.Exit(code=1)
+
+    if os.getenv("LOOPMARK_API_KEY") and _data_dir_is_shared_writable():
+        console.print(
+            f"[error]ERROR:[/error] DATA_DIR {config.DATA_DIR} is group/world-writable and holds PII. "
+            f"Run: chmod 700 {config.DATA_DIR}"
+        )
+        raise typer.Exit(code=1)
+
     try:
         import uvicorn
     except ImportError:
         console.print("[error]ERROR:[/error] Install the API extra: pip install 'loopmark-agent[api]'")
-        raise typer.Exit(code=1)
-
-    if host not in ("127.0.0.1", "localhost") and not os.getenv("LOOPMARK_API_KEY"):
-        console.print("[error]ERROR:[/error] Set LOOPMARK_API_KEY before binding to a non-local address.")
         raise typer.Exit(code=1)
 
     uvicorn.run("api.app:app", host=host, port=port)

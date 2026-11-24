@@ -15,6 +15,7 @@ function fakeGithub({ issues = {}, openCount = 0, assignable = true, comments = 
           return { data: { assignees: assignable ? assignees.map((login) => ({ login })) : [] } };
         },
         removeAssignees: async ({ assignees }) => calls.push({ op: "removeAssignees", assignees }),
+        update: async ({ issue_number, state }) => calls.push({ op: "update", issue_number, state }),
         get: async ({ issue_number }) => {
           const issue = issues[String(issue_number)];
           if (!issue) throw Object.assign(new Error("Not Found"), { status: 404 });

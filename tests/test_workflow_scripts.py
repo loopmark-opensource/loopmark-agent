@@ -170,3 +170,27 @@ def test_check_updates_existing_comment_instead_of_reposting():
     passing = _check("Closes #56", comments=existing)
     assert passing["calls"][0]["op"] == "updateComment"
     assert "check passed" in passing["calls"][0]["body"]
+
+
+# ─── close issues on dev merge ───────────────────────────────────────────
+
+def _dev_merge(body: str, issues: dict) -> dict:
+    context = {"repo": REPO, "payload": {"pull_request": {"number": 62, "body": body, "user": {"login": "alice"}}}}
+    return _run("close-issues-on-dev-merge.yml", context, {"issues": issues})
+
+
+def test_dev_merge_closes_linked_open_issues():
+    issues = {"49": {"state": "open"}, "50": {"state": "open"}}
+    result = _dev_merge("Closes #49\nFixes: #50 and mentions #51", issues)
+    closed = [c["issue_number"] for c in result["calls"] if c["op"] == "update"]
+    assert closed == [49, 50]
+    assert all(c["state"] == "closed" for c in result["calls"] if c["op"] == "update")
+    comments = [c["body"] for c in result["calls"] if c["op"] == "createComment"]
+    assert len(comments) == 2 and "Fixed by #62" in comments[0] and "@alice" in comments[0]
+
+
+def test_dev_merge_skips_closed_missing_and_pull_requests():
+    issues = {"49": {"state": "closed"}, "45": {"state": "open", "pull_request": {}}}
+    result = _dev_merge("Closes #49, closes #45, closes #999", issues)
+    assert result["calls"] == []
+    assert result["failed"] is None
